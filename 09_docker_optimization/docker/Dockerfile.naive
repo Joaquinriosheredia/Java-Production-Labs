@@ -1,0 +1,14 @@
+# NAIVE Dockerfile — DO NOT use in production
+# Problems:
+#   1. Full JDK in runtime (200MB+ overhead vs JRE)
+#   2. Single fat JAR layer — any code change rebuilds the entire layer
+#   3. Runs as root (security risk)
+#   4. No .dockerignore — builds entire context including target/ and .git/
+
+FROM eclipse-temurin:21-jdk
+WORKDIR /app
+COPY target/*.jar app.jar
+EXPOSE 8088
+ENTRYPOINT ["java", "-jar", "app.jar"]
+
+# Result: ~500MB image, slow rebuilds on code changes, runs as root

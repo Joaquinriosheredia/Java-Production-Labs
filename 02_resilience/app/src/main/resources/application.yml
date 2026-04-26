@@ -1,0 +1,58 @@
+spring:
+  application:
+    name: lab-02-resilience
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  port: 8081
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics,circuitbreakers,retries
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+  metrics:
+    tags:
+      lab: "02_resilience"
+
+logging:
+  level:
+    com.labs: DEBUG
+    io.github.resilience4j: DEBUG
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      externalService:
+        # Open after 50% failure rate over last 10 calls
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 10
+        slidingWindowSize: 10
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        registerHealthIndicator: true
+
+  retry:
+    instances:
+      externalService:
+        maxAttempts: 3
+        waitDuration: 200ms
+        retryExceptions:
+          - java.lang.RuntimeException
+        ignoreExceptions:
+          - java.lang.IllegalArgumentException
+
+  bulkhead:
+    instances:
+      externalService:
+        maxConcurrentCalls: 10
+        maxWaitDuration: 500ms

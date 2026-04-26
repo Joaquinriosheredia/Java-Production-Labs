@@ -1,0 +1,11 @@
+target/
+.git/
+.github/
+*.md
+!app/
+benchmark/
+chaos/
+docs/
+scripts/
+.idea/
+*.iml

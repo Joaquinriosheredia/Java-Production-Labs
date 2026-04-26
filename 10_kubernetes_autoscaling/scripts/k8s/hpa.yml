@@ -1,0 +1,44 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: lab10-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: lab10-autoscaling
+  minReplicas: 1
+  maxReplicas: 10
+
+  metrics:
+    # CPU-based scaling (built-in)
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+    # Custom Prometheus metric scaling (requires prometheus-adapter)
+    # Scales based on lab_active_requests_gauge from /actuator/prometheus
+    - type: Pods
+      pods:
+        metric:
+          name: lab_active_requests_gauge
+        target:
+          type: AverageValue
+          averageValue: "10"  # Scale up when avg > 10 active requests per pod
+
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30   # Avoid flapping on spikes
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60             # Add max 2 pods per minute
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Wait 5min before scaling down
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 120            # Remove max 1 pod per 2 minutes

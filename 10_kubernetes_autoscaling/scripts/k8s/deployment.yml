@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab10-autoscaling
+  labels:
+    app: lab10-autoscaling
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lab10-autoscaling
+  template:
+    metadata:
+      labels:
+        app: lab10-autoscaling
+      annotations:
+        # Prometheus scrape annotations
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8089"
+    spec:
+      terminationGracePeriodSeconds: 40  # > server.shutdown grace period (30s)
+      containers:
+        - name: app
+          image: lab10-k8s-autoscaling:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8089
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          # Liveness: restart pod if app hangs
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8089
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+          # Readiness: don't send traffic until app is ready
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8089
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            failureThreshold: 3
+          # Graceful shutdown: Spring handles SIGTERM
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]  # Give LB time to deregister
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lab10-autoscaling
+spec:
+  selector:
+    app: lab10-autoscaling
+  ports:
+    - port: 80
+      targetPort: 8089
+  type: ClusterIP

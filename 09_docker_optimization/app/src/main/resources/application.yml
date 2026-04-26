@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: lab-09-docker-optimization
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  port: 8088
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,metrics,info
+  info:
+    java:
+      enabled: true
+    os:
+      enabled: true
+  metrics:
+    tags:
+      lab: "09_docker_optimization"

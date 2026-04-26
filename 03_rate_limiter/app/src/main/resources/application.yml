@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: lab-03-rate-limiter
+  threads:
+    virtual:
+      enabled: true
+  data:
+    redis:
+      url: redis://localhost:6379
+      connect-timeout: 2s
+      timeout: 1s
+
+server:
+  port: 8082
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,metrics
+  metrics:
+    tags:
+      lab: "03_rate_limiter"
+
+logging:
+  level:
+    com.labs: DEBUG

@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: lab-10-kubernetes-autoscaling
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  port: 8089
+  # Graceful shutdown: finish in-flight requests before pod terminates
+  shutdown: graceful
+
+spring.lifecycle.timeout-per-shutdown-phase: 30s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,metrics,info
+  endpoint:
+    health:
+      show-details: always
+      # Liveness probe: is the app alive?
+      # Readiness probe: is the app ready to receive traffic?
+      # Kubernetes uses these to control pod lifecycle
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  metrics:
+    tags:
+      lab: "10_kubernetes_autoscaling"
+      pod: ${HOSTNAME:local}
+
+logging:
+  level:
+    com.labs: INFO

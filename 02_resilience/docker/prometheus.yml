@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'lab02-resilience'
+    static_configs:
+      - targets: ['app:8081']
+    metrics_path: /actuator/prometheus

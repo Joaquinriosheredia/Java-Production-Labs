@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: lab-01-virtual-threads
+  threads:
+    virtual:
+      enabled: true   # Spring Boot 3.2 shortcut — enables virtual threads for all async tasks
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      lab: "01_virtual_threads"
+      application: ${spring.application.name}
+
+logging:
+  structured:
+    format:
+      console: ecs   # Elastic Common Schema — structured JSON logs
+  level:
+    com.labs: DEBUG
