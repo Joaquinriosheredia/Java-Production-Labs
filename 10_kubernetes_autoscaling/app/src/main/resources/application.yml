@@ -25,6 +25,12 @@ management:
       # Kubernetes uses these to control pod lifecycle
       probes:
         enabled: true
+    prometheus:
+      enabled: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
   health:
     livenessstate:
       enabled: true
