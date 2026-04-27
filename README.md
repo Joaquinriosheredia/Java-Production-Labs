@@ -187,6 +187,14 @@ This repository is designed to be evaluated, not just read:
 
 ---
 
+## How this was built
+
+This repository was developed with AI assistance (Claude) for scaffolding, code generation, and test setup. All labs have been reviewed, compiled, tested locally, and benchmarked by the author.
+
+The benchmark results are real — executed on local hardware (WSL2 Ubuntu, 16 CPUs, 15.57GB RAM). Every architectural decision is documented in the ADRs and defensible in a technical interview.
+
+---
+
 ## License
 
 MIT
