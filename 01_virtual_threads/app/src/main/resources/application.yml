@@ -3,7 +3,7 @@ spring:
     name: lab-01-virtual-threads
   threads:
     virtual:
-      enabled: true   # Spring Boot 3.2 shortcut — enables virtual threads for all async tasks
+      enabled: true   # Spring Boot 3.2: enables virtual threads for Tomcat + async tasks
 
 server:
   port: 8080
@@ -16,14 +16,17 @@ management:
   endpoint:
     health:
       show-details: always
+    prometheus:
+      enabled: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true   # Required in Spring Boot 3.2 — not enabled by default
   metrics:
     tags:
       lab: "01_virtual_threads"
       application: ${spring.application.name}
 
 logging:
-  structured:
-    format:
-      console: ecs   # Elastic Common Schema — structured JSON logs
   level:
     com.labs: DEBUG

@@ -1,0 +1,13 @@
+apiVersion: 1
+
+providers:
+  - name: lab01
+    orgId: 1
+    folder: "Lab 01 — Virtual Threads"
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/dashboards
+      foldersFromFilesStructure: false
