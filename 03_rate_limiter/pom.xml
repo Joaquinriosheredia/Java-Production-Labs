@@ -49,6 +49,12 @@
         </dependency>
         <!-- Test -->
         <dependency>
+            <groupId>com.labs</groupId>
+            <artifactId>labs-common</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
