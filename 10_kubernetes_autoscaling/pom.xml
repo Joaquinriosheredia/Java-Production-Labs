@@ -17,7 +17,7 @@
     <description>HPA with custom Prometheus metrics and readiness-aware scaling</description>
     <properties>
         <java.version>21</java.version>
-        <testcontainers.version>1.19.7</testcontainers.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
     </properties>
     <dependencies>
         <dependency>
