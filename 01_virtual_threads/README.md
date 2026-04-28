@@ -1,7 +1,6 @@
 # Lab 01 — Virtual Threads (Project Loom)
 
 ## Problem
-
 A high-traffic API handles hundreds of concurrent I/O-bound requests (DB queries, external service calls).
 With a fixed platform thread pool, throughput is capped by pool size: beyond the limit, requests queue or timeout.
 Scaling the pool increases memory and OS scheduler pressure.
@@ -96,15 +95,21 @@ TASKS=500 LATENCY_MS=100 POOL_SIZE=10 bash benchmark/run-benchmark.sh
 
 ---
 
-## Results (Baseline Machine: 4-core, 8GB RAM)
+## Results (Real benchmark — WSL2 Ubuntu, 16 CPUs, 15.57GB RAM)
 
-| Scenario | Tasks | Simulated I/O | Pool Size | Wall Time | Throughput |
-|----------|-------|--------------|-----------|-----------|-----------|
-| Virtual Threads | 200 | 100ms | unlimited | ~120ms | ~1667 TPS |
-| Platform Threads | 200 | 100ms | 20 | ~1050ms | ~190 TPS |
-| Platform Threads | 200 | 100ms | 200 | ~110ms | ~1818 TPS |
+3-run average, 200 VUs × 30s, JVM: `-Xms512m -Xmx512m`, Java 21, Spring Boot 3.2
 
-**Key insight:** Platform threads achieve virtual thread performance only when pool size ≥ concurrent tasks — but at the cost of memory (200 threads × ~1MB stack = ~200MB just for stacks).
+| Metric | Virtual Threads | Platform (pool=20) | Δ |
+|--------|----------------|--------------------|---|
+| p50 latency | 103.8 ms | 1280.4 ms | +1134% |
+| p95 latency | 113.6 ms | 1718.3 ms | +1413% |
+| p99 latency | 167.5 ms | 5817.5 ms | +3372% |
+| Throughput | 1057.9 req/s | 142.3 req/s | 7.4× |
+| Error rate | 0.00% | 0.00% | — |
+
+**Key insight:** With pool=20 and 200 concurrent VUs, platform threads batch requests into 10 rounds × 100ms = ~1000ms minimum. Under sustained load, p99 spiked to 13.9s (thread-pool exhaustion). Virtual threads park on I/O and immediately resume — wall-clock time ≈ single I/O latency regardless of concurrency.
+
+Platform threads match virtual thread throughput only when pool size ≥ concurrent tasks — but 200 threads × ~1MB stack = ~200MB memory overhead, permanently reserved.
 
 ---
 
