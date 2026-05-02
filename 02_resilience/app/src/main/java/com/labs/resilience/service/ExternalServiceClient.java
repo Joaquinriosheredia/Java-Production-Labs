@@ -46,9 +46,12 @@ public class ExternalServiceClient {
 
     /**
      * Main call with Circuit Breaker + Retry + Bulkhead composition.
-     * Order: Bulkhead → CircuitBreaker → Retry (outermost to innermost).
+     * Actual Spring AOP order: Retry (outermost) → CircuitBreaker → Bulkhead (innermost).
+     *
+     * @Bulkhead has NO fallbackMethod so BulkheadFullException propagates up to CircuitBreaker.
+     * @CircuitBreaker holds the single fallback: handles both service failures and CB-open rejections.
      */
-    @Bulkhead(name = "externalService", fallbackMethod = "bulkheadFallback")
+    @Bulkhead(name = "externalService")
     @CircuitBreaker(name = "externalService", fallbackMethod = "circuitBreakerFallback")
     @Retry(name = "externalService")
     public String callExternalService(String requestId) {
