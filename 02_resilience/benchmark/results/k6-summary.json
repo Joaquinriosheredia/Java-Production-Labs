@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-05-02T15:55:22.986Z",
+  "duration_s": 60,
+  "vus_max": 200,
+  "http_reqs_total": 159482,
+  "error_rate_pct": "0.00",
+  "fallback_rate_pct": "56.92",
+  "latency_p50_ms": "N/A",
+  "latency_p90_ms": 24.0852691,
+  "latency_p99_ms": "N/A",
+  "latency_max_ms": 5827.337608,
+  "throughput_rps": 2924.4073576854535,
+  "success_total": 68703,
+  "fallback_total": 90779
+}
