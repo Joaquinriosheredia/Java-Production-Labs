@@ -21,7 +21,7 @@
     <properties>
         <java.version>21</java.version>
         <resilience4j.version>2.2.0</resilience4j.version>
-        <testcontainers.version>1.19.7</testcontainers.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
     </properties>
 
     <dependencies>
