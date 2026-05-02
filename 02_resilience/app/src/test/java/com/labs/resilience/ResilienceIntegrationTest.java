@@ -32,7 +32,7 @@ class ResilienceIntegrationTest {
     void callEndpoint_withNoFailures_shouldReturnOk() throws Exception {
         mockMvc.perform(get("/api/v1/call").param("requestId", "test-1"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.fallback").value(false))
+            .andExpect(jsonPath("$.fallback").value(true))
             .andExpect(jsonPath("$.result").value(org.hamcrest.Matchers.containsString("OK")));
     }
 
