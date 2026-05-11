@@ -1,13 +1,16 @@
 package com.labs.ratelimiter.service;
 
+import com.labs.ratelimiter.RedisUnavailableException;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.ConsumptionProbe;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -18,23 +21,31 @@ import java.util.function.Supplier;
  * Each API client (identified by key) gets its own bucket stored in Redis.
  * This ensures rate limiting is consistent across multiple application instances.
  *
- * Strategy: 10 tokens/second with burst capacity of 20.
+ * Strategy: configurable capacity / refill rate (defaults: 20 capacity, 10 tokens/s).
  */
 @Service
 public class TokenBucketService {
 
     private static final Logger log = LoggerFactory.getLogger(TokenBucketService.class);
 
-    private static final int CAPACITY = 20;
-    private static final int REFILL_TOKENS = 10;
-    private static final Duration REFILL_PERIOD = Duration.ofSeconds(1);
+    private final int capacity;
+    private final int refillTokens;
+    private final Duration refillPeriod;
 
     private final ProxyManager<String> proxyManager;
     private final Counter allowedCounter;
     private final Counter rejectedCounter;
 
-    public TokenBucketService(ProxyManager<String> proxyManager, MeterRegistry meterRegistry) {
+    public TokenBucketService(
+            ProxyManager<String> proxyManager,
+            MeterRegistry meterRegistry,
+            @Value("${rate-limiter.capacity:20}") int capacity,
+            @Value("${rate-limiter.refill-tokens:1}") int refillTokens,
+            @Value("${rate-limiter.refill-period-millis:100}") long refillPeriodMillis) {
         this.proxyManager = proxyManager;
+        this.capacity = capacity;
+        this.refillTokens = refillTokens;
+        this.refillPeriod = Duration.ofMillis(refillPeriodMillis);
         this.allowedCounter = Counter.builder("lab.ratelimiter.requests")
             .tag("lab", "03_rate_limiter")
             .tag("outcome", "allowed")
@@ -47,15 +58,12 @@ public class TokenBucketService {
 
     public record RateLimitResult(boolean allowed, long remainingTokens, long nanosToRefill) {}
 
-    /**
-     * Try to consume 1 token from the bucket identified by key.
-     * @param clientKey usually the API key or IP address
-     */
+    @CircuitBreaker(name = "redis", fallbackMethod = "tryConsumeFallback")
     public RateLimitResult tryConsume(String clientKey) {
         Supplier<BucketConfiguration> configSupplier = () -> BucketConfiguration.builder()
             .addLimit(Bandwidth.builder()
-                .capacity(CAPACITY)
-                .refillGreedy(REFILL_TOKENS, REFILL_PERIOD)
+                .capacity(capacity)
+                .refillGreedy(refillTokens, refillPeriod)
                 .build())
             .build();
 
@@ -71,5 +79,12 @@ public class TokenBucketService {
             log.debug("Rate limit REJECTED for key={}, nanosToWait={}", clientKey, probe.getNanosToWaitForRefill());
             return new RateLimitResult(false, 0, probe.getNanosToWaitForRefill());
         }
+    }
+
+    // Called by Resilience4j when the circuit is OPEN or when tryConsume throws.
+    // Throwing here propagates RedisUnavailableException to the controller → 503.
+    private RateLimitResult tryConsumeFallback(String clientKey, Throwable ex) {
+        log.warn("Redis circuit breaker triggered for key={}: {}", clientKey, ex.getMessage());
+        throw new RedisUnavailableException("Rate limiter backend unavailable", ex);
     }
 }

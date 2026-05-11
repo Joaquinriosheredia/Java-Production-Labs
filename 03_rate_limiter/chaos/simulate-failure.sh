@@ -2,13 +2,19 @@
 # Lab 03 — Chaos: Redis Outage
 #
 # Stops Redis to simulate a distributed rate limiter backend failure.
-# Demonstrates the "fail open vs fail closed" decision:
-# Current implementation: fail open (allow all requests when Redis is down)
-# Alternative: fail closed (reject all when Redis is down)
+#
+# Actual behaviour (fail-CLOSED):
+#   When Redis is unreachable the Lettuce connection pool exhausts its 1s timeout
+#   and the request hangs until the TCP connection is dropped — callers receive no
+#   response (HTTP 000 / connection refused) rather than being silently allowed through.
+#   The Resilience4j CircuitBreaker detects repeated failures, opens the circuit, and
+#   subsequent calls fail immediately with HTTP 503 (<1 ms) instead of timing out.
 #
 # Expected observable effect:
-#   - Redis down: requests may succeed (fail-open) or fail 500 (fail-closed)
-#   - Metric: redis connection errors spike
+#   - First N failures (sliding-window-size=10, threshold=60%): requests time out
+#   - Circuit opens after threshold: requests return 503 instantly
+#   - Redis restart: circuit transitions OPEN → HALF_OPEN → CLOSED automatically
+#   - Metric: redis connection errors spike, then circuitbreaker.state transitions
 
 set -euo pipefail
 

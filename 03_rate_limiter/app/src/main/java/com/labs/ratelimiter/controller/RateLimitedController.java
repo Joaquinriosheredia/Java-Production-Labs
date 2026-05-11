@@ -1,7 +1,7 @@
 package com.labs.ratelimiter.controller;
 
+import com.labs.ratelimiter.RedisUnavailableException;
 import com.labs.ratelimiter.service.TokenBucketService;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -56,5 +56,11 @@ public class RateLimitedController {
     @GetMapping("/health-check")
     public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok("OK");
+    }
+
+    @ExceptionHandler(RedisUnavailableException.class)
+    public ResponseEntity<Map<String, Object>> handleRedisUnavailable(RedisUnavailableException ex) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+            .body(Map.of("error", "Rate limiter temporarily unavailable. Please retry shortly."));
     }
 }

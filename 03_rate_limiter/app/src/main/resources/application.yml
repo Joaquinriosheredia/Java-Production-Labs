@@ -22,6 +22,22 @@ management:
     tags:
       lab: "03_rate_limiter"
 
+rate-limiter:
+  capacity: 20
+  refill-tokens: 1
+  refill-period-millis: 100  # greedy: 1 token every 100ms = 10 tokens/s, no burst spike
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      redis:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 5s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+
 logging:
   level:
     com.labs: DEBUG

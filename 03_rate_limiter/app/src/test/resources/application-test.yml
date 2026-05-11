@@ -1,0 +1,11 @@
+rate-limiter:
+  capacity: 20
+  refill-tokens: 1
+  refill-period-millis: 3600000  # 1 hour in millis — bucket never refills during test execution
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      redis:
+        sliding-window-size: 100
+        failure-rate-threshold: 100  # never opens against a healthy test Redis
