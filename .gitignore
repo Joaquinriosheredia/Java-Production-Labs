@@ -47,12 +47,9 @@ logs/
 # Docker volumes
 data/
 
-# k6 results
-benchmark/results/
+# Benchmark raw data — large JSON outputs from k6/JMH; keep only summary.md / summary.csv
+**/benchmark/results/*.json
 *.k6.json
-
-# JMH results
-benchmark/*.json
 
 # Env files
 .env
