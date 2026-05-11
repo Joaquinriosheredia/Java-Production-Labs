@@ -47,37 +47,42 @@ public class QueryBenchmarkService {
         return Map.of("query", queryName, "plan", result.toString());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Map<String, Object> benchmarkQuery(String mode, int limit) {
-        long start = System.currentTimeMillis();
         List<?> results;
+        long startNs;
+        long durationNs;
 
         if ("seq_scan".equals(mode)) {
-            // Force sequential scan by disabling index usage
-            em.createNativeQuery("SET enable_indexscan = off").executeUpdate();
-            em.createNativeQuery("SET enable_bitmapscan = off").executeUpdate();
+            // SET LOCAL is transaction-scoped: auto-restores on commit/rollback,
+            // and excluded from timing so only the actual SELECT is measured.
+            em.createNativeQuery("SET LOCAL enable_indexscan = off").executeUpdate();
+            em.createNativeQuery("SET LOCAL enable_bitmapscan = off").executeUpdate();
+            startNs = System.nanoTime();
             results = em.createNativeQuery(
                 "SELECT * FROM events WHERE status = 'PENDING' ORDER BY occurred_at ASC LIMIT :limit")
                 .setParameter("limit", limit)
                 .getResultList();
-            em.createNativeQuery("SET enable_indexscan = on").executeUpdate();
-            em.createNativeQuery("SET enable_bitmapscan = on").executeUpdate();
+            durationNs = System.nanoTime() - startNs;
         } else {
+            startNs = System.nanoTime();
             results = em.createNativeQuery(
                 "SELECT * FROM events WHERE status = 'PENDING' ORDER BY occurred_at ASC LIMIT :limit")
                 .setParameter("limit", limit)
                 .getResultList();
+            durationNs = System.nanoTime() - startNs;
         }
 
-        long durationMs = System.currentTimeMillis() - start;
+        long durationMs = durationNs / 1_000_000;
         (mode.equals("seq_scan") ? seqScanTimer : indexScanTimer)
-            .record(durationMs, java.util.concurrent.TimeUnit.MILLISECONDS);
+            .record(durationNs, java.util.concurrent.TimeUnit.NANOSECONDS);
 
         return Map.of(
             "mode", mode,
             "limit", limit,
             "rowsReturned", results.size(),
-            "durationMs", durationMs
+            "durationMs", durationMs,
+            "durationNanos", durationNs
         );
     }
 }

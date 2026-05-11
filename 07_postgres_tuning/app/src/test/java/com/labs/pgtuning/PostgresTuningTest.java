@@ -1,5 +1,6 @@
 package com.labs.pgtuning;
 
+import com.labs.pgtuning.repository.EventRepository;
 import com.labs.pgtuning.service.DataSeeder;
 import com.labs.pgtuning.service.QueryBenchmarkService;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +35,9 @@ class PostgresTuningTest {
     }
 
     @Autowired
+    private EventRepository repository;
+
+    @Autowired
     private DataSeeder seeder;
 
     @Autowired
@@ -41,20 +45,26 @@ class PostgresTuningTest {
 
     @BeforeEach
     void seed() {
+        repository.deleteAllInBatch();
         seeder.seed(10_000);
     }
 
     @Test
     void indexScan_shouldBeConsistentlyFaster() {
-        // Warm up
+        // Warm up — load Postgres buffer cache so first-run noise doesn't skew results
         benchmarkService.benchmarkQuery("index_scan", 100);
         benchmarkService.benchmarkQuery("seq_scan", 100);
 
-        // Measure
-        long indexMs = (long) benchmarkService.benchmarkQuery("index_scan", 100).get("durationMs");
-        long seqMs = (long) benchmarkService.benchmarkQuery("seq_scan", 100).get("durationMs");
+        // 5 measured iterations each — accumulated nanos eliminate millisecond-granularity ties
+        // and give a statistically reliable comparison between the two query plans.
+        long totalIndexNs = 0;
+        long totalSeqNs = 0;
+        for (int i = 0; i < 5; i++) {
+            totalIndexNs += (long) benchmarkService.benchmarkQuery("index_scan", 100).get("durationNanos");
+            totalSeqNs   += (long) benchmarkService.benchmarkQuery("seq_scan",   100).get("durationNanos");
+        }
 
-        assertThat(indexMs).isLessThan(seqMs);
+        assertThat(totalIndexNs).isLessThan(totalSeqNs);
     }
 
     @Test
