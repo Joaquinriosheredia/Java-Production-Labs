@@ -8,10 +8,15 @@ import java.util.UUID;
  * Outbox table: persisted atomically with the business entity in the same DB transaction.
  * A background poller reads PENDING events and publishes them to Kafka.
  * This guarantees at-least-once delivery without dual-write problems.
+ *
+ * FAILED events are retried with exponential backoff via retry_count + next_retry_at.
+ * Max retries is configurable (default 10). After max retries, events remain FAILED
+ * and require manual intervention or a dead-letter process.
  */
 @Entity
 @Table(name = "outbox_events", indexes = {
-    @Index(name = "idx_outbox_status_created", columnList = "status, created_at")
+    @Index(name = "idx_outbox_status_created", columnList = "status, created_at"),
+    @Index(name = "idx_outbox_failed_retry",   columnList = "next_retry_at, created_at")
 })
 public class OutboxEvent {
 
@@ -40,6 +45,12 @@ public class OutboxEvent {
 
     private Instant publishedAt;
 
+    @Column(name = "retry_count", nullable = false)
+    private int retryCount = 0;
+
+    @Column(name = "next_retry_at")
+    private Instant nextRetryAt;
+
     @PrePersist
     void prePersist() {
         this.createdAt = Instant.now();
@@ -63,4 +74,8 @@ public class OutboxEvent {
     public Instant getCreatedAt() { return createdAt; }
     public Instant getPublishedAt() { return publishedAt; }
     public void setPublishedAt(Instant t) { this.publishedAt = t; }
+    public int getRetryCount() { return retryCount; }
+    public void setRetryCount(int n) { this.retryCount = n; }
+    public Instant getNextRetryAt() { return nextRetryAt; }
+    public void setNextRetryAt(Instant t) { this.nextRetryAt = t; }
 }

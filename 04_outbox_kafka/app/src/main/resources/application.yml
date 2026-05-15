@@ -24,7 +24,7 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
       acks: all
-      retries: 3
+      retries: 5
 
 server:
   port: 8083
@@ -39,8 +39,9 @@ management:
       lab: "04_outbox_kafka"
 
 outbox:
-  poll-interval-ms: 1000
-  publish-timeout-ms: 5000
+  poll-interval-ms: 500
+  publish-timeout-ms: 10000
+  max-retries: 10
 
 logging:
   level:
