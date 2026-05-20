@@ -17,8 +17,8 @@ import java.util.stream.Collectors;
 public class MessagingBenchmarkService {
 
     private static final Logger log = LoggerFactory.getLogger(MessagingBenchmarkService.class);
-    static final String REDIS_CHANNEL = "lab06:benchmark";
-    static final String KAFKA_TOPIC   = "lab06-benchmark";
+    public static final String REDIS_CHANNEL = "lab06:benchmark";
+    public static final String KAFKA_TOPIC   = "lab06-benchmark";
 
     // 128-byte fixed payload → deterministic comparison across runs
     private static final String PAYLOAD_TEMPLATE =
@@ -111,8 +111,9 @@ public class MessagingBenchmarkService {
 
         long wallStart = System.currentTimeMillis();
         for (int i = 0; i < messages; i++) {
+            final int idx = i;
             long t0 = System.nanoTime();
-            redisPublishTimer.record(() -> redisTemplate.convertAndSend(REDIS_CHANNEL, payload(i)));
+            redisPublishTimer.record(() -> redisTemplate.convertAndSend(REDIS_CHANNEL, payload(idx)));
             redisSendNanos.add(System.nanoTime() - t0);
         }
 
@@ -225,7 +226,8 @@ public class MessagingBenchmarkService {
     // Listener callbacks (called by Spring's MessageListenerAdapter / @KafkaListener)
     // -------------------------------------------------------------------------
 
-    public void incrementRedisReceived() {
+    // MessageListenerAdapter requires the method to accept the message body as a String
+    public void incrementRedisReceived(String message) {
         redisReceived.incrementAndGet();
         if (redisLatch != null) redisLatch.countDown();
     }

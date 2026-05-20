@@ -33,9 +33,11 @@ services:
       KAFKA_LOG_RETENTION_MS: 3600000
       CLUSTER_ID: GlZf731OSJWxE8zODn573Q
     healthcheck:
-      # kafka-topics --list returns 0 when the broker is fully up and serving requests
-      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list 2>/dev/null && echo ok || exit 1"]
-      interval: 10s
-      timeout: 10s
-      retries: 15
-      start_period: 30s
+      # TCP check against the internal listener (9092). kafka-topics can't be used
+      # here because ADVERTISED_LISTENERS points to the host-side port (9094) which
+      # is not reachable from inside the container.
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/9092' 2>/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s

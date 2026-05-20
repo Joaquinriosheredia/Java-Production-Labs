@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.listener.PatternTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
-import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -19,8 +18,11 @@ public class MessagingConfig {
             MessagingBenchmarkService benchmarkService) {
         var container = new RedisMessageListenerContainer();
         container.setConnectionFactory(factory);
-        var adapter = new MessageListenerAdapter(benchmarkService, "incrementRedisReceived");
-        container.addMessageListener(adapter, new PatternTopic("lab06:benchmark"));
+        // Use lambda MessageListener directly — avoids MessageListenerAdapter reflection issues in SDR 3.x
+        container.addMessageListener(
+            (message, pattern) -> benchmarkService.incrementRedisReceived(new String(message.getBody())),
+            new PatternTopic(MessagingBenchmarkService.REDIS_CHANNEL)
+        );
         return container;
     }
 
