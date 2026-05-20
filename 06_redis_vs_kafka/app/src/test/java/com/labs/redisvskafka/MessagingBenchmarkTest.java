@@ -40,12 +40,26 @@ class MessagingBenchmarkTest {
         assertThat(result.messages()).isEqualTo(100);
         assertThat(result.publishDurationMs()).isGreaterThan(0);
         assertThat(result.publishThroughputMps()).isGreaterThan(0);
+        assertThat(result.receivedCount()).isEqualTo(100);
+        assertThat(result.deliveryRatePct()).isEqualTo(100.0);
+        assertThat(result.latency()).isNotNull();
+        assertThat(result.latency().p99us()).isGreaterThan(0);
     }
 
     @Test
     void kafkaBenchmark_shouldPublishAndReceiveMessages() throws Exception {
         var result = service.benchmarkKafka(50);
         assertThat(result.messages()).isEqualTo(50);
+        assertThat(result.publishDurationMs()).isGreaterThan(0);
         assertThat(result.publishThroughputMps()).isGreaterThan(0);
+        assertThat(result.receivedCount()).isEqualTo(50);
+        assertThat(result.deliveryRatePct()).isEqualTo(100.0);
+        assertThat(result.latency()).isNotNull();
+    }
+
+    @Test
+    void warmup_shouldCompleteWithoutError() throws Exception {
+        service.warmup(50);
+        // Warmup succeeds if no exception is thrown and containers are still healthy
     }
 }

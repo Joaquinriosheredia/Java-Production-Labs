@@ -11,6 +11,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+      start_period: 5s
 
   kafka:
     image: confluentinc/cp-kafka:7.6.0
@@ -22,15 +23,19 @@ services:
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      # External clients (Spring Boot app on host) connect via localhost:9094
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9094
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_MS: 3600000
       CLUSTER_ID: GlZf731OSJWxE8zODn573Q
     healthcheck:
-      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/9092' 2>/dev/null || exit 1"]
+      # kafka-topics --list returns 0 when the broker is fully up and serving requests
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list 2>/dev/null && echo ok || exit 1"]
       interval: 10s
-      timeout: 5s
-      retries: 10
+      timeout: 10s
+      retries: 15
+      start_period: 30s

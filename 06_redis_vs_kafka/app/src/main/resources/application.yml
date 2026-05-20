@@ -6,13 +6,22 @@ spring:
       enabled: true
   data:
     redis:
-      url: redis://localhost:6379
+      # Port 6380 = docker-compose external mapping (6380:6379)
+      url: redis://localhost:6380
   kafka:
-    bootstrap-servers: localhost:9092
+    # Port 9094 = docker-compose external mapping (9094:9092)
+    bootstrap-servers: localhost:9094
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      # acks=all: leader + all ISR replicas must ack → strongest durability
       acks: all
+      retries: 3
+      properties:
+        linger.ms: 0
+        batch.size: 16384
+        delivery.timeout.ms: 10000
+        request.timeout.ms: 5000
     consumer:
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -26,6 +35,22 @@ management:
     web:
       exposure:
         include: health,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
   metrics:
     tags:
       lab: "06_redis_vs_kafka"
+
+---
+# optimized profile: tuned for throughput via batching
+spring:
+  config:
+    activate:
+      on-profile: optimized
+  kafka:
+    producer:
+      properties:
+        linger.ms: 5
+        batch.size: 65536
+        compression.type: lz4
