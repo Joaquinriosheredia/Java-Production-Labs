@@ -63,7 +63,7 @@ See `make help` for all available commands.
 | 05 | [Saga Pattern](05_saga_pattern/) | Distributed transactions + compensation | 8084 | ✅ | ✅ |
 | 06 | [Redis vs Kafka](06_redis_vs_kafka/) | Messaging trade-off benchmark | 8085 | ✅ | ✅ |
 | 07 | [PostgreSQL Tuning](07_postgres_tuning/) | Partial indexes, EXPLAIN ANALYZE | 8086 | ✅ | ✅ |
-| 08 | [Kafka Streams](08_kafka_streams/) | Real-time windowed aggregation | 8087 | ✅ | — |
+| 08 | [Kafka Streams](08_kafka_streams/) | Real-time windowed aggregation | 8087 | ✅ | ✅ |
 | 09 | [Docker Optimization](09_docker_optimization/) | Layered JARs, 62% smaller images | 8088 | ✅ | — |
 | 10 | [Kubernetes Autoscaling](10_kubernetes_autoscaling/) | HPA on custom Prometheus metrics | 8089 | ✅ | — |
 
@@ -169,6 +169,20 @@ Redis wins on latency (< 1 ms end-to-end); Kafka wins on durability guarantees.
 100K-row table, 5% PENDING rows. Partial index on `(status)` WHERE `status = 'PENDING'`
 eliminates the full table scan. `EXPLAIN (ANALYZE, BUFFERS)` output in ADR-0001.
 
+### Lab 08 — Kafka Streams
+
+| Metric | Baseline | Post-Recovery |
+|--------|:--------:|:-------------:|
+| Throughput | **46.8 rps** | **109.7 rps** |
+| p99 latency | **4 ms** | **4 ms** |
+| Error rate | **0%** | **0%** |
+| Consumer lag | **0** | **0** |
+| Recovery time | — | **< 200 ms** (changelog replay) |
+
+Critical finding: `actuator/health` reports `UP` and Streams state shows `RUNNING` even when Kafka is unreachable — standard health probes are false positives.
+During Kafka outage: `kafkaTemplate.send().get()` blocks HTTP threads synchronously; 60% request failure rate at 10 s timeout.
+`at_least_once` guarantee with no duplicates on clean restart; lag=0 immediately after broker recovery.
+
 ---
 
 ## What Each Lab Demonstrates
@@ -208,9 +222,9 @@ The throughput gap is an API asymmetry, not a speed claim — see benchmark resu
 `EXPLAIN (ANALYZE, BUFFERS)` output before and after included in ADR-0001.
 
 ### 08 · Kafka Streams
-Tumbling 60-second window counting orders per user.
-Unit tests use `TopologyTestDriver` — no broker needed.
-Integration test with Testcontainers Kafka.
+Tumbling 60-second window counting orders per user. 46.8 rps baseline, p99=4ms, lag=0.
+Kafka broker killed mid-load: 60% error rate, health check false-positive (reports UP while Kafka is down).
+Recovery to RUNNING in < 200ms via changelog topic replay — no duplicates, lag=0 immediately after restart.
 
 ### 09 · Docker Optimization
 Naive image: 520MB, 3-minute rebuilds, runs as root, ignores container memory limits.
