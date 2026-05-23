@@ -142,7 +142,12 @@ public class OrderSagaOrchestrator {
     }
 
     private void publish(String topic, Object payload) throws Exception {
-        kafka.send(topic, mapper.writeValueAsString(payload)).get();
+        kafka.send(topic, mapper.writeValueAsString(payload))
+            .whenComplete((result, ex) -> {
+                if (ex != null) {
+                    log.error("Failed to publish to topic {}: {}", topic, ex.getMessage(), ex);
+                }
+            });
     }
 
     public void setSimulatePaymentFailure(boolean v) { this.simulatePaymentFailure = v; }
