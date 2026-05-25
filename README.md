@@ -64,7 +64,7 @@ See `make help` for all available commands.
 | 06 | [Redis vs Kafka](06_redis_vs_kafka/) | Messaging trade-off benchmark | 8085 | ✅ | ✅ |
 | 07 | [PostgreSQL Tuning](07_postgres_tuning/) | Partial indexes, EXPLAIN ANALYZE | 8086 | ✅ | ✅ |
 | 08 | [Kafka Streams](08_kafka_streams/) | Real-time windowed aggregation | 8087 | ✅ | ✅ |
-| 09 | [Docker Optimization](09_docker_optimization/) | Layered JARs, 62% smaller images | 8088 | ✅ | — |
+| 09 | [Docker Optimization](09_docker_optimization/) | Layered JARs, 62% smaller images | 8088 | ✅ | ✅ |
 | 10 | [Kubernetes Autoscaling](10_kubernetes_autoscaling/) | HPA on custom Prometheus metrics | 8089 | ✅ | — |
 
 ---
@@ -182,6 +182,17 @@ eliminates the full table scan. `EXPLAIN (ANALYZE, BUFFERS)` output in ADR-0001.
 Critical finding: `actuator/health` reports `UP` and Streams state shows `RUNNING` even when Kafka is unreachable — standard health probes are false positives.
 During Kafka outage: `kafkaTemplate.send().get()` blocks HTTP threads synchronously; 60% request failure rate at 10 s timeout.
 `at_least_once` guarantee with no duplicates on clean restart; lag=0 immediately after broker recovery.
+
+### Lab 09 — Docker Optimization
+
+| Metric | Naive Image | Optimized Image |
+|--------|:-----------:|:---------------:|
+| Tamaño imagen | 233 MB | **79 MB** (−66.1%) |
+| Startup | 2917 ms | **2445 ms** (−472 ms) |
+| Rebuild en CI con BuildKit | 10 s | **3-5 s** (4-8× speedup) |
+| Seguridad | root | **nonroot (65532)** |
+
+- **Memoria**: ZGC pre-reserva heap correctamente para containers (comportamiento esperado).
 
 ---
 
