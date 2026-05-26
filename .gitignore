@@ -54,3 +54,6 @@ data/
 # Env files
 .env
 .env.local
+
+# Binaries
+**/benchmark/bin/

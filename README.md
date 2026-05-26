@@ -65,7 +65,7 @@ See `make help` for all available commands.
 | 07 | [PostgreSQL Tuning](07_postgres_tuning/) | Partial indexes, EXPLAIN ANALYZE | 8086 | ✅ | ✅ |
 | 08 | [Kafka Streams](08_kafka_streams/) | Real-time windowed aggregation | 8087 | ✅ | ✅ |
 | 09 | [Docker Optimization](09_docker_optimization/) | Layered JARs, 62% smaller images | 8088 | ✅ | ✅ |
-| 10 | [Kubernetes Autoscaling](10_kubernetes_autoscaling/) | HPA on custom Prometheus metrics | 8089 | ✅ | — |
+| 10 | [Kubernetes Autoscaling](10_kubernetes_autoscaling/) | HPA on custom Prometheus metrics | 8089 | ✅ | ✅ |
 
 ---
 
@@ -193,6 +193,14 @@ During Kafka outage: `kafkaTemplate.send().get()` blocks HTTP threads synchronou
 | Seguridad | root | **nonroot (65532)** |
 
 - **Memoria**: ZGC pre-reserva heap correctamente para containers (comportamiento esperado).
+
+### Lab 10 — Kubernetes HPA
+
+- CPU con 50 VUs: 110m (threshold: 350m) — HPA nunca disparó
+- 0% error rate con 1 solo pod durante toda la prueba
+- Antipattern confirmado: CPU-based HPA es inservible con Virtual Threads
+- Recovery real: 25s hasta readinessProbe (no 5s hasta Running)
+- Solución: custom metrics HPA con lab_active_requests_gauge
 
 ---
 
