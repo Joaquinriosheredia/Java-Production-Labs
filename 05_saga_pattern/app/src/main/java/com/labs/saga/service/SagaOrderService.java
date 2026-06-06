@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class SagaOrderService {
@@ -41,7 +42,7 @@ public class SagaOrderService {
                 "customerId", customerId,
                 "amount", amount
             ));
-            kafka.send("saga.order.created", saved.getId().toString(), payload).get();
+            kafka.send("saga.order.created", saved.getId().toString(), payload).get(5, TimeUnit.SECONDS);
             log.info("Saga started for order {}", saved.getId());
         } catch (Exception e) {
             throw new RuntimeException("Failed to start saga", e);
