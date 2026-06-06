@@ -1,13 +1,17 @@
 package com.labs.k8s.controller;
 
 import com.labs.k8s.service.WorkloadSimulator;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")
+@Validated
 public class WorkloadController {
 
     private final WorkloadSimulator simulator;
@@ -22,7 +26,7 @@ public class WorkloadController {
      */
     @GetMapping("/work")
     public ResponseEntity<WorkloadSimulator.WorkResult> doWork(
-            @RequestParam(defaultValue = "100") long workMs) throws InterruptedException {
+            @RequestParam(defaultValue = "100") @Min(0) @Max(30000) long workMs) throws InterruptedException {
         return ResponseEntity.ok(simulator.processRequest(workMs));
     }
 
