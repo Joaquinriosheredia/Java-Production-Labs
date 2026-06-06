@@ -9,7 +9,9 @@ import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,6 +56,7 @@ public class OrderSagaOrchestrator {
     }
 
     // Step 1: Order created → initiate payment
+    @RetryableTopic(attempts = "3", backoff = @Backoff(delay = 1000))
     @KafkaListener(topics = "saga.order.created", groupId = "payment-service")
     @Transactional
     public void onOrderCreated(String message) throws Exception {
@@ -71,6 +74,7 @@ public class OrderSagaOrchestrator {
     }
 
     // Step 2: Payment approved → reserve inventory
+    @RetryableTopic(attempts = "3", backoff = @Backoff(delay = 1000))
     @KafkaListener(topics = "saga.payment.approved", groupId = "inventory-service")
     @Transactional
     public void onPaymentApproved(String message) throws Exception {
@@ -88,6 +92,7 @@ public class OrderSagaOrchestrator {
     }
 
     // Step 3 (happy path): Inventory reserved → complete order
+    @RetryableTopic(attempts = "3", backoff = @Backoff(delay = 1000))
     @KafkaListener(topics = "saga.inventory.reserved", groupId = "order-service-complete")
     @Transactional
     public void onInventoryReserved(String message) throws Exception {
@@ -100,6 +105,7 @@ public class OrderSagaOrchestrator {
     }
 
     // Compensation Step A: Inventory failed → refund payment
+    @RetryableTopic(attempts = "3", backoff = @Backoff(delay = 1000))
     @KafkaListener(topics = "saga.inventory.failed", groupId = "payment-service-compensate")
     @Transactional
     public void onInventoryFailed(String message) throws Exception {
@@ -112,6 +118,7 @@ public class OrderSagaOrchestrator {
     }
 
     // Compensation Step B: Payment refunded → cancel order
+    @RetryableTopic(attempts = "3", backoff = @Backoff(delay = 1000))
     @KafkaListener(topics = "saga.payment.refunded", groupId = "order-service-cancel")
     @Transactional
     public void onPaymentRefunded(String message) throws Exception {
@@ -124,6 +131,7 @@ public class OrderSagaOrchestrator {
     }
 
     // Payment failure compensation
+    @RetryableTopic(attempts = "3", backoff = @Backoff(delay = 1000))
     @KafkaListener(topics = "saga.payment.failed", groupId = "order-service-payment-failed")
     @Transactional
     public void onPaymentFailed(String message) throws Exception {
