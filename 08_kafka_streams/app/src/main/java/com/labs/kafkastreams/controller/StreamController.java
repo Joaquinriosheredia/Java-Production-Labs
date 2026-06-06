@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/v1/streams")
@@ -49,7 +50,7 @@ public class StreamController {
             "status", status,
             "amount", amount
         ));
-        kafkaTemplate.send(OrderStreamTopology.INPUT_TOPIC, orderId, payload).get();
+        kafkaTemplate.send(OrderStreamTopology.INPUT_TOPIC, orderId, payload).get(5, TimeUnit.SECONDS);
         log.info("Published order {} for user {}", orderId, userId);
         return ResponseEntity.ok(Map.of("orderId", orderId, "topic", OrderStreamTopology.INPUT_TOPIC));
     }
