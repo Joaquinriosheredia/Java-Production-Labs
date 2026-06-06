@@ -37,11 +37,16 @@ public class SagaController {
 
     record CreateOrderRequest(String customerId, BigDecimal amount) {}
 
+    private static String sanitizeMdc(String value) {
+        if (value == null) return "";
+        return value.replaceAll("[\r\n\t]", "_");
+    }
+
     @PostMapping("/orders")
     public ResponseEntity<PurchaseOrder> createOrder(@RequestBody CreateOrderRequest req) {
         String requestId = UUID.randomUUID().toString();
         MDC.put("requestId", requestId);
-        MDC.put("customerId", req.customerId());
+        MDC.put("customerId", sanitizeMdc(req.customerId()));
         try {
             log.info("Starting saga amount={}", req.amount());
             PurchaseOrder order = orderService.startSaga(req.customerId(), req.amount());
@@ -54,7 +59,7 @@ public class SagaController {
 
     @GetMapping("/orders/{id}")
     public ResponseEntity<PurchaseOrder> getOrder(@PathVariable UUID id) {
-        MDC.put("orderId", id.toString());
+        MDC.put("orderId", sanitizeMdc(id.toString()));
         try {
             return orderRepository.findById(id)
                 .map(order -> {

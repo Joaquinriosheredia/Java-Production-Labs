@@ -31,11 +31,16 @@ public class OrderController {
 
     record CreateOrderRequest(String customerId, BigDecimal amount) {}
 
+    private static String sanitizeMdc(String value) {
+        if (value == null) return "";
+        return value.replaceAll("[\r\n\t]", "_");
+    }
+
     @PostMapping
     public ResponseEntity<Order> createOrder(@RequestBody CreateOrderRequest req) {
         String requestId = UUID.randomUUID().toString();
         MDC.put("requestId", requestId);
-        MDC.put("customerId", req.customerId());
+        MDC.put("customerId", sanitizeMdc(req.customerId()));
         try {
             log.info("Creating order amount={}", req.amount());
             Order order = orderService.createOrder(req.customerId(), req.amount());
