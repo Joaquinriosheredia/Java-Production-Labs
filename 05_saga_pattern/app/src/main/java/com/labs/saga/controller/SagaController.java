@@ -4,6 +4,9 @@ import com.labs.saga.model.PurchaseOrder;
 import com.labs.saga.saga.OrderSagaOrchestrator;
 import com.labs.saga.service.OrderRepository;
 import com.labs.saga.service.SagaOrderService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +20,8 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/v1/saga")
 public class SagaController {
+
+    private static final Logger log = LoggerFactory.getLogger(SagaController.class);
 
     private final SagaOrderService orderService;
     private final OrderRepository orderRepository;
@@ -34,15 +39,35 @@ public class SagaController {
 
     @PostMapping("/orders")
     public ResponseEntity<PurchaseOrder> createOrder(@RequestBody CreateOrderRequest req) {
-        PurchaseOrder order = orderService.startSaga(req.customerId(), req.amount());
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(order);
+        String requestId = UUID.randomUUID().toString();
+        MDC.put("requestId", requestId);
+        MDC.put("customerId", req.customerId());
+        try {
+            log.info("Starting saga amount={}", req.amount());
+            PurchaseOrder order = orderService.startSaga(req.customerId(), req.amount());
+            log.info("Saga initiated orderId={} status={}", order.getId(), order.getSagaStatus());
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(order);
+        } finally {
+            MDC.clear();
+        }
     }
 
     @GetMapping("/orders/{id}")
     public ResponseEntity<PurchaseOrder> getOrder(@PathVariable UUID id) {
-        return orderRepository.findById(id)
-            .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
+        MDC.put("orderId", id.toString());
+        try {
+            return orderRepository.findById(id)
+                .map(order -> {
+                    log.info("Order lookup orderId={} status={}", id, order.getSagaStatus());
+                    return ResponseEntity.ok(order);
+                })
+                .orElseGet(() -> {
+                    log.warn("Order not found orderId={}", id);
+                    return ResponseEntity.notFound().<PurchaseOrder>build();
+                });
+        } finally {
+            MDC.clear();
+        }
     }
 
     @GetMapping("/stats")
