@@ -88,6 +88,20 @@ Every lab ships all of these:
 
 ---
 
+## Security & Quality Fixes
+
+7 real bugs found and fixed using java-vibe-guard + security-guidance analysis:
+
+- [WorkloadController](file:///home/usuariojoaquin/Java-Production-Labs/10_kubernetes_autoscaling/app/src/main/java/com/labs/k8s/controller/WorkloadController.java#L29): DoS via unbounded `workMs` parameter (`@Min`/`@Max` added)
+- [SagaOrderService](file:///home/usuariojoaquin/Java-Production-Labs/05_saga_pattern/app/src/main/java/com/labs/saga/service/SagaOrderService.java#L45): Kafka send without timeout → thread starvation (`.get(5s)`)
+- [StreamController](file:///home/usuariojoaquin/Java-Production-Labs/08_kafka_streams/app/src/main/java/com/labs/kafkastreams/controller/StreamController.java#L53): Kafka send without timeout → thread starvation (`.get(5s)`)
+- [OrderSagaOrchestrator](file:///home/usuariojoaquin/Java-Production-Labs/05_saga_pattern/app/src/main/java/com/labs/saga/saga/OrderSagaOrchestrator.java#L59): 6 `@KafkaListener` without `@RetryableTopic` → silent message loss
+- [docker-compose.yml](file:///home/usuariojoaquin/Java-Production-Labs/docker-compose.yml): Zookeeper deprecated → migrated to KRaft mode
+- [OrderController](file:///home/usuariojoaquin/Java-Production-Labs/04_outbox_kafka/app/src/main/java/com/labs/outbox/controller/OrderController.java#L40) + [SagaController](file:///home/usuariojoaquin/Java-Production-Labs/05_saga_pattern/app/src/main/java/com/labs/saga/controller/SagaController.java#L45): MDC logging added for observability
+- [OrderController](file:///home/usuariojoaquin/Java-Production-Labs/04_outbox_kafka/app/src/main/java/com/labs/outbox/controller/OrderController.java#L34) + [SagaController](file:///home/usuariojoaquin/Java-Production-Labs/05_saga_pattern/app/src/main/java/com/labs/saga/controller/SagaController.java#L40): Log injection via MDC sanitized (CWE-117)
+
+---
+
 ## Real Benchmark Results
 
 Executed on local hardware: WSL2 Ubuntu, 16 CPUs, 15.57 GB RAM, Docker in-process.
