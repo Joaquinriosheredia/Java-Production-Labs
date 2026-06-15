@@ -148,6 +148,8 @@ Distributed token bucket — correct under multiple app instances sharing the sa
 A silent data-loss bug (order created, event never enqueued) was found and fixed via chaos testing.
 The outbox pattern prevents the dual-write race condition at the DB transaction boundary.
 
+Verification available: [java-vibe-guard --verify VIBE-001](https://github.com/Joaquinriosheredia/java-vibe-guard)
+
 ### Lab 05 — Saga Pattern
 
 | Metric | Value |
@@ -239,6 +241,8 @@ Returns `Retry-After` and `X-RateLimit-Remaining` headers.
 Order + outbox event written in one DB transaction.
 Kill Kafka mid-flight: orders are created without errors, events queue in the outbox.
 When Kafka recovers the poller drains the backlog — zero data loss.
+
+Verification available: [java-vibe-guard --verify VIBE-001](https://github.com/Joaquinriosheredia/java-vibe-guard)
 
 ### 05 · Saga Pattern
 Choreography-based saga over Kafka topics.

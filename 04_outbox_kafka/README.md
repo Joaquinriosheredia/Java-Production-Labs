@@ -138,6 +138,9 @@ bash chaos/simulate-failure.sh
 
 Stops Kafka, creates 5 orders, then restarts Kafka. Shows events queue and drain.
 
+### Reproducible Verification
+Verification available: [java-vibe-guard --verify VIBE-001](https://github.com/Joaquinriosheredia/java-vibe-guard)
+
 ---
 
 ## How to Measure
