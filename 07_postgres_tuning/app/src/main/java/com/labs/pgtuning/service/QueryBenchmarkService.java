@@ -59,8 +59,11 @@ public class QueryBenchmarkService {
             em.createNativeQuery("SET LOCAL enable_indexscan = off").executeUpdate();
             em.createNativeQuery("SET LOCAL enable_bitmapscan = off").executeUpdate();
             startNs = System.nanoTime();
+            // Distinct SQL text: pgjdbc switches to a server-side prepared statement after
+            // 5 executions and PostgreSQL reuses its cached plan regardless of SET LOCAL.
+            // With the same text as the index query, this mode would reuse the index plan.
             results = em.createNativeQuery(
-                "SELECT * FROM events WHERE status = 'PENDING' ORDER BY occurred_at ASC LIMIT :limit")
+                "SELECT /* seq_scan */ * FROM events WHERE status = 'PENDING' ORDER BY occurred_at ASC LIMIT :limit")
                 .setParameter("limit", limit)
                 .getResultList();
             durationNs = System.nanoTime() - startNs;

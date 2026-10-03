@@ -34,11 +34,24 @@ if ! grep -Eq "Index (Only )?Scan using idx_events_pending" "$RAW/explain_index.
 fi
 grep -q "Seq Scan on events" "$RAW/explain_seq.txt" || { echo "ERROR: seq mode is not a Seq Scan" >&2; exit 1; }
 
+# Table scan counters, to check after the runs that each mode really used its plan.
+scans() { psql -Atc "SELECT seq_scan || ' ' || idx_scan FROM pg_stat_user_tables WHERE relname = 'events';"; }
+read -r seq0 idx0 <<<"$(scans)"
+
 echo "Comparing seq scan vs index scan ($RUNS runs)..."
 for run in $(seq 1 "$RUNS"); do
   curl -sf "$BASE_URL/api/v1/postgres/compare?limit=100" > "$RAW/compare_run${run}.json"
   cat "$RAW/compare_run${run}.json"; echo
 done
+
+sleep 1  # pg_stat counters are flushed asynchronously
+read -r seq1 idx1 <<<"$(scans)"
+echo "seq_scan_delta=$((seq1 - seq0)) idx_scan_delta=$((idx1 - idx0)) runs=$RUNS" > "$RAW/scan_counters.txt"
+cat "$RAW/scan_counters.txt"
+if [ $((seq1 - seq0)) -ne "$RUNS" ] || [ $((idx1 - idx0)) -ne "$RUNS" ]; then
+  echo "ERROR: expected $RUNS seq scans and $RUNS index scans on events (see $RAW/scan_counters.txt)" >&2
+  exit 1
+fi
 
 stat() { python3 ../../scripts/bench_stats.py "$1" $RAW/compare_run*.json; }
 read -r sm smin smax n <<<"$(stat seqScan.durationNanos)"
@@ -61,7 +74,7 @@ ratio=$(python3 -c "print(f'{$sm/$im:.1f}')")
   echo "Rows: $(tr '|' ' ' < "$RAW/row_counts.txt" | awk '{print $1" total, "$2" PENDING"}'). \`ANALYZE events\` runs after seeding."
   echo "\"Seq scan\" disables index and bitmap scans with \`SET LOCAL\`; timing is measured in the app around the SELECT."
   echo
-  echo "Plans (\`EXPLAIN (ANALYZE, BUFFERS)\`): [\`raw/explain_index.txt\`](raw/explain_index.txt) — $(grep -Eo 'Index (Only )?Scan using idx_events_pending' "$RAW/explain_index.txt" | head -1); [\`raw/explain_seq.txt\`](raw/explain_seq.txt) — Seq Scan on events."
+  echo "Plans (\`EXPLAIN (ANALYZE, BUFFERS)\`): [\`raw/explain_index.txt\`](raw/explain_index.txt) — $(grep -Eo 'Index (Only )?Scan using idx_events_pending' "$RAW/explain_index.txt" | head -1); [\`raw/explain_seq.txt\`](raw/explain_seq.txt) — Seq Scan on events. Scan counters over the runs (\`pg_stat_user_tables\`): $(cat "$RAW/scan_counters.txt") ([\`raw/scan_counters.txt\`](raw/scan_counters.txt))."
   echo
   echo "## Results — median (min – max) over $n runs"
   echo
