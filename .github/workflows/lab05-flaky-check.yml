@@ -1,0 +1,46 @@
+# TEMPORARY (removed before review): measures the failure rate of the Lab 05
+# SagaIntegrationTest before and after the listener-assignment wait, on 2 CPUs.
+name: Lab 05 flaky check
+on:
+  push:
+    branches: [fix/05-wait-for-assignment]
+jobs:
+  runs:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [before, after]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+      - name: Install labs-common
+        run: mvn install -f common/pom.xml -B -q -DskipTests
+      - name: Use the test from main (before)
+        if: matrix.variant == 'before'
+        run: git show origin/main:05_saga_pattern/app/src/test/java/com/labs/saga/SagaIntegrationTest.java > 05_saga_pattern/app/src/test/java/com/labs/saga/SagaIntegrationTest.java
+      - name: 10 runs on 2 CPUs
+        working-directory: 05_saga_pattern
+        run: |
+          echo "nproc=$(nproc) taskset=0,1" | tee results.txt
+          for i in $(seq 1 10); do
+            if taskset -c 0,1 mvn -B -q test > run-$i.log 2>&1; then r=ok; else
+              r=$(grep -ohE "ConditionTimeout|listeners not ready" target/surefire-reports/*.txt 2>/dev/null | head -1); r="fail ${r:-other}"; fi
+            echo "${{ matrix.variant }} run $i: $r" | tee -a results.txt
+          done
+          echo "${{ matrix.variant }}: $(grep -c ': fail' results.txt || true) failures / 10" | tee -a results.txt
+          cat results.txt >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lab05-${{ matrix.variant }}
+          path: |
+            05_saga_pattern/results.txt
+            05_saga_pattern/run-*.log
+            05_saga_pattern/target/surefire-reports/
