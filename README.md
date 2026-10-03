@@ -64,27 +64,27 @@ See `make help` for all available commands.
 | 06 | [Redis vs Kafka](06_redis_vs_kafka/) | Messaging trade-off benchmark | 8085 | ✅ | ✅ |
 | 07 | [PostgreSQL Tuning](07_postgres_tuning/) | Partial indexes, EXPLAIN ANALYZE | 8086 | ✅ | ✅ |
 | 08 | [Kafka Streams](08_kafka_streams/) | Real-time windowed aggregation | 8087 | ✅ | ✅ |
-| 09 | [Docker Optimization](09_docker_optimization/) | Layered JARs, 62% smaller images | 8088 | ✅ | ✅ |
+| 09 | [Docker Optimization](09_docker_optimization/) | Layered JARs, multi-stage build | 8088 | ✅ | ✅ |
 | 10 | [Kubernetes Autoscaling](10_kubernetes_autoscaling/) | HPA on custom Prometheus metrics | 8089 | ✅ | ✅ |
 
 ---
 
 ## Quality Matrix
 
-Every lab ships all of these:
+Testcontainers: ✅ only where a test actually starts a container (labs 03–07). Labs 01, 02, 08, 09 and 10 declare the dependency but no test uses it.
 
 | Lab | ADR | Tests | Testcontainers | Benchmark | Metrics | Chaos |
 |-----|-----|-------|----------------|-----------|---------|-------|
-| 01 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 02 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 01 | ✅ | ✅ | — | ✅ | ✅ | ✅ |
+| 02 | ✅ | ✅ | — | ✅ | ✅ | ✅ |
 | 03 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 04 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 05 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 06 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 07 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 08 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 09 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 10 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 08 | ✅ | ✅ | — | ✅ | ✅ | ✅ |
+| 09 | ✅ | ✅ | — | ✅ | ✅ | ✅ |
+| 10 | ✅ | ✅ | — | ✅ | ✅ | ✅ |
 
 ---
 
@@ -92,13 +92,13 @@ Every lab ships all of these:
 
 7 real bugs found and fixed using java-vibe-guard + security-guidance analysis:
 
-- [WorkloadController](file:///home/usuariojoaquin/Java-Production-Labs/10_kubernetes_autoscaling/app/src/main/java/com/labs/k8s/controller/WorkloadController.java#L29): DoS via unbounded `workMs` parameter (`@Min`/`@Max` added)
-- [SagaOrderService](file:///home/usuariojoaquin/Java-Production-Labs/05_saga_pattern/app/src/main/java/com/labs/saga/service/SagaOrderService.java#L45): Kafka send without timeout → thread starvation (`.get(5s)`)
-- [StreamController](file:///home/usuariojoaquin/Java-Production-Labs/08_kafka_streams/app/src/main/java/com/labs/kafkastreams/controller/StreamController.java#L53): Kafka send without timeout → thread starvation (`.get(5s)`)
-- [OrderSagaOrchestrator](file:///home/usuariojoaquin/Java-Production-Labs/05_saga_pattern/app/src/main/java/com/labs/saga/saga/OrderSagaOrchestrator.java#L59): 6 `@KafkaListener` without `@RetryableTopic` → silent message loss
-- [docker-compose.yml](file:///home/usuariojoaquin/Java-Production-Labs/docker-compose.yml): Zookeeper deprecated → migrated to KRaft mode
-- [OrderController](file:///home/usuariojoaquin/Java-Production-Labs/04_outbox_kafka/app/src/main/java/com/labs/outbox/controller/OrderController.java#L40) + [SagaController](file:///home/usuariojoaquin/Java-Production-Labs/05_saga_pattern/app/src/main/java/com/labs/saga/controller/SagaController.java#L45): MDC logging added for observability
-- [OrderController](file:///home/usuariojoaquin/Java-Production-Labs/04_outbox_kafka/app/src/main/java/com/labs/outbox/controller/OrderController.java#L34) + [SagaController](file:///home/usuariojoaquin/Java-Production-Labs/05_saga_pattern/app/src/main/java/com/labs/saga/controller/SagaController.java#L40): Log injection via MDC sanitized (CWE-117)
+- [WorkloadController](10_kubernetes_autoscaling/app/src/main/java/com/labs/k8s/controller/WorkloadController.java#L29): DoS via unbounded `workMs` parameter (`@Min`/`@Max` added)
+- [SagaOrderService](05_saga_pattern/app/src/main/java/com/labs/saga/service/SagaOrderService.java#L45): Kafka send without timeout → thread starvation (`.get(5s)`)
+- [StreamController](08_kafka_streams/app/src/main/java/com/labs/kafkastreams/controller/StreamController.java#L53): Kafka send without timeout → thread starvation (`.get(5s)`)
+- [OrderSagaOrchestrator](05_saga_pattern/app/src/main/java/com/labs/saga/saga/OrderSagaOrchestrator.java#L59): 6 `@KafkaListener` without `@RetryableTopic` → silent message loss
+- [docker-compose.yml](docker-compose.yml): Zookeeper deprecated → migrated to KRaft mode
+- [OrderController](04_outbox_kafka/app/src/main/java/com/labs/outbox/controller/OrderController.java#L40) + [SagaController](05_saga_pattern/app/src/main/java/com/labs/saga/controller/SagaController.java#L45): MDC logging added for observability
+- [OrderController](04_outbox_kafka/app/src/main/java/com/labs/outbox/controller/OrderController.java#L34) + [SagaController](05_saga_pattern/app/src/main/java/com/labs/saga/controller/SagaController.java#L40): Log injection via MDC sanitized (CWE-117)
 
 ---
 
@@ -122,8 +122,8 @@ No reactive programming required.
 | Metric | Value |
 |--------|-------|
 | Circuit OPEN duration | 27 s |
-| Calls blocked while OPEN | 90,680 |
-| Recovery (HALF_OPEN → CLOSED) | automatic, < 5 s |
+| Calls rejected while OPEN (`not_permitted`) | 90,680 |
+| Recovery (OPEN → CLOSED) | automatic, ~5 s after the failure cleared |
 
 Bulkhead + CircuitBreaker + Retry chain measured end-to-end under injected failure rate.
 
@@ -143,7 +143,7 @@ Distributed token bucket — correct under multiple app instances sharing the sa
 |--------|-------|
 | Throughput | 163.8 req/s |
 | Data loss under Kafka kill | zero |
-| Drain rate improvement (tuned poller) | +70% |
+| Drain rate (tuned poller) | 88.9 → 150.8 events/s (+70%) |
 
 A silent data-loss bug (order created, event never enqueued) was found and fixed via chaos testing.
 The outbox pattern prevents the dual-write race condition at the DB transaction boundary.
@@ -156,7 +156,7 @@ Verification available: [java-vibe-guard --verify VIBE-001](https://github.com/J
 |--------|-------|
 | Orders stuck in `STARTED` | 71.8% |
 | Race condition demonstrated | dual-write without saga |
-| HTTP response during failure | 200 OK (silent failure) |
+| HTTP response during failure | 202 Accepted, 0% HTTP errors (silent failure) |
 
 Choreography-based saga over Kafka. The benchmark intentionally demonstrates the failure mode —
 services appearing healthy while distributed state is inconsistent.
@@ -165,14 +165,14 @@ services appearing healthy while distributed state is inconsistent.
 
 | Metric | Redis Pub/Sub | Kafka |
 |--------|:-------------:|:-----:|
-| Throughput (default API) | 2,227 msg/s | 47,619 msg/s |
-| Messages lost on broker crash | **200 / 200** | 0 committed |
-| Recovery after restart | impossible | 100% (full replay) |
+| Throughput (default API, 1,000 msgs, best of 3) | 2,227 msg/s | 47,619 msg/s (enqueue: 21 ms) |
+| Messages sent during broker crash, lost | **200 / 200** | **200 / 200** (producer `delivery.timeout.ms` 10 s) |
+| Messages committed before the crash | — (no persistence) | intact, replayed after restart |
 
 The throughput gap reflects an API asymmetry: Redis `convertAndSend()` blocks per-message
 for a full TCP round-trip (~419 µs); Kafka `send()` enqueues to an in-memory buffer (~7 µs)
-and flushes asynchronously. In sync-equivalent mode, Redis is 4–10× faster than Kafka.
-Redis wins on latency (< 1 ms end-to-end); Kafka wins on durability guarantees.
+and flushes asynchronously. Neither backend delivered what was sent while its broker was down;
+Kafka keeps what was committed before the crash, Redis keeps nothing.
 
 ### Lab 07 — PostgreSQL Optimization
 
@@ -196,7 +196,7 @@ eliminates the full table scan. `EXPLAIN (ANALYZE, BUFFERS)` output in ADR-0001.
 | Recovery time | — | **< 200 ms** (changelog replay) |
 
 Critical finding: `actuator/health` reports `UP` and Streams state shows `RUNNING` even when Kafka is unreachable — standard health probes are false positives.
-During Kafka outage: `kafkaTemplate.send().get()` blocks HTTP threads synchronously; 60% request failure rate at 10 s timeout.
+During Kafka outage: `kafkaTemplate.send().get()` blocks HTTP threads synchronously; 60% of requests failed (24/40) with a 15 s client timeout.
 `at_least_once` guarantee with no duplicates on clean restart; lag=0 immediately after broker recovery.
 
 ### Lab 09 — Docker Optimization
@@ -251,7 +251,7 @@ Full state machine visible in a single DB query.
 
 ### 06 · Redis vs Kafka
 Side-by-side benchmark: Redis Pub/Sub (2,227 msg/s, ephemeral) vs Kafka (47,619 msg/s async, durable).
-100% message loss in Redis during broker crash; Kafka recovers with full replay from committed offsets.
+During a broker crash both lose what is sent (200/200); Kafka replays what was committed before it, Redis has nothing to replay.
 The throughput gap is an API asymmetry, not a speed claim — see benchmark results for full analysis.
 
 ### 07 · PostgreSQL Tuning
@@ -260,7 +260,7 @@ The throughput gap is an API asymmetry, not a speed claim — see benchmark resu
 
 ### 08 · Kafka Streams
 Tumbling 60-second window counting orders per user. 46.8 rps baseline, p99=4ms, lag=0.
-Kafka broker killed mid-load: 60% error rate, health check false-positive (reports UP while Kafka is down).
+Kafka broker killed mid-load: 60% error rate (24/40), health check false-positive (reports UP while Kafka is down).
 Recovery to RUNNING in < 200ms via changelog topic replay — no duplicates, lag=0 immediately after restart.
 
 ### 09 · Docker Optimization
@@ -285,7 +285,7 @@ Or per lab:
 cd 01_virtual_threads && ./mvnw verify
 ```
 
-Tests use Testcontainers — no mocks for infrastructure (PostgreSQL, Redis, Kafka).
+Labs 03–07 run their integration tests against real PostgreSQL, Redis and Kafka with Testcontainers.
 
 ---
 
@@ -315,7 +315,7 @@ This repository is designed to be evaluated, not just read:
 |--------|--------------|
 | Technical decisions with trade-offs | `<lab>/docs/adr/ADR-0001.md` |
 | Production-grade tests | `<lab>/app/src/test/` |
-| Real infrastructure in tests | Testcontainers — no mocks |
+| Real infrastructure in tests | Testcontainers in labs 03–07 |
 | Measurable performance claims | `<lab>/benchmark/README.md` |
 | Failure scenarios | `<lab>/chaos/simulate-failure.sh` |
 | CI pipeline | `.github/workflows/ci.yml` |
