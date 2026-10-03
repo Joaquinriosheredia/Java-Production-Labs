@@ -1,0 +1,1 @@
+{"indexSpeedup":"2.0x faster","seqScan":{"durationMs":6,"mode":"seq_scan","durationNanos":6672564,"rowsReturned":100,"limit":100},"indexScan":{"durationMs":3,"mode":"index_scan","durationNanos":3292871,"rowsReturned":100,"limit":100}}
