@@ -7,8 +7,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -43,28 +45,44 @@ class PostgresTuningTest {
     @Autowired
     private QueryBenchmarkService benchmarkService;
 
+    @Autowired
+    private JdbcTemplate jdbc;
+
+    @Autowired
+    private TransactionTemplate transactions;
+
     @BeforeEach
     void seed() {
         repository.deleteAllInBatch();
         seeder.seed(10_000);
+        jdbc.execute("ANALYZE events");
+    }
+
+    // Asserts the access path, not wall-clock time: on a 10K-row table a seq scan and an
+    // index scan take about the same time, so a timing comparison is noise (it failed in CI).
+    // Plans are checked with the same planner settings the service uses for each mode.
+    @Test
+    void indexMode_usesPartialIndexScan() {
+        assertThat(explain(false)).contains("Index Scan using idx_events_pending");
     }
 
     @Test
-    void indexScan_shouldBeConsistentlyFaster() {
-        // Warm up — load Postgres buffer cache so first-run noise doesn't skew results
-        benchmarkService.benchmarkQuery("index_scan", 100);
-        benchmarkService.benchmarkQuery("seq_scan", 100);
+    void seqMode_usesSeqScan() {
+        assertThat(explain(true))
+            .contains("Seq Scan on events")
+            .doesNotContain("idx_events_pending");
+    }
 
-        // 5 measured iterations each — accumulated nanos eliminate millisecond-granularity ties
-        // and give a statistically reliable comparison between the two query plans.
-        long totalIndexNs = 0;
-        long totalSeqNs = 0;
-        for (int i = 0; i < 5; i++) {
-            totalIndexNs += (long) benchmarkService.benchmarkQuery("index_scan", 100).get("durationNanos");
-            totalSeqNs   += (long) benchmarkService.benchmarkQuery("seq_scan",   100).get("durationNanos");
-        }
-
-        assertThat(totalIndexNs).isLessThan(totalSeqNs);
+    private String explain(boolean disableIndexes) {
+        return transactions.execute(status -> {
+            if (disableIndexes) {
+                jdbc.execute("SET LOCAL enable_indexscan = off");
+                jdbc.execute("SET LOCAL enable_bitmapscan = off");
+            }
+            return String.join("\n", jdbc.queryForList(
+                "EXPLAIN SELECT * FROM events WHERE status = 'PENDING' ORDER BY occurred_at ASC LIMIT 100",
+                String.class));
+        });
     }
 
     @Test
