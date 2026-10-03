@@ -65,11 +65,11 @@ REB_NAIVE=""; REB_OPT=""
 for run in $(seq 1 "$REBUILDS"); do
   cp "$RAW/.src.bak" "$SRC"; echo "// rebuild probe naive $run $(date +%s%N)" >> "$SRC"
   t0=$(now); ./mvnw -q package -DskipTests && docker build -q -f docker/Dockerfile.naive -t lab09-naive-rebuild . > /dev/null; t1=$(now)
-  REB_NAIVE+="$(elapsed "$t0" "$t1") "
+  rn=$(elapsed "$t0" "$t1"); REB_NAIVE+="$rn "
   cp "$RAW/.src.bak" "$SRC"; echo "// rebuild probe optimized $run $(date +%s%N)" >> "$SRC"
   t0=$(now); docker build -q -f docker/Dockerfile -t lab09-optimized-rebuild . > /dev/null; t1=$(now)
-  REB_OPT+="$(elapsed "$t0" "$t1") "
-  echo "run $run: naive ${REB_NAIVE##* }… optimized ${REB_OPT##* }…"
+  ro=$(elapsed "$t0" "$t1"); REB_OPT+="$ro "
+  echo "run $run: naive ${rn}s, optimized ${ro}s"
 done
 {
   echo "startup_s lab09-naive: ${START[lab09-naive]}"
@@ -78,7 +78,11 @@ done
   echo "rebuild_s lab09-optimized (docker build): $REB_OPT"
 } > "$RAW/timings.txt"
 
+# With the containerd image store, inspect .Size is the compressed content size (pull/push);
+# `docker images` shows the unpacked size on disk. Both are recorded.
 size_mb() { docker image inspect "$1" --format='{{.Size}}' | awk '{printf "%.0f", $1/1000/1000}'; }
+disk_size() { docker images --format '{{.Size}}' "$1:latest"; }
+docker images --format '{{.Repository}}:{{.Tag}}\t{{.ID}}\t{{.Size}}' | grep '^lab09-' > "$RAW/docker-images.txt"
 user_of() { docker run --rm --entrypoint sh "$1" -c 'echo "$(id -un) (uid $(id -u))"'; }
 NAIVE_MB=$(size_mb lab09-naive); OPT_MB=$(size_mb lab09-optimized)
 REDUCTION=$(python3 -c "print(f'{(1-$OPT_MB/$NAIVE_MB)*100:.0f}')")
@@ -97,12 +101,13 @@ REDUCTION=$(python3 -c "print(f'{(1-$OPT_MB/$NAIVE_MB)*100:.0f}')")
   echo
   echo "## Results"
   echo
-  echo "Sizes: \`docker image inspect .Size\` in MB (10^6 bytes). Times: median (min – max)."
+  echo "Compressed size: \`docker image inspect .Size\` (containerd image store: compressed content, what is pulled/pushed), MB = 10^6 bytes. On-disk size: \`docker images\` (unpacked). Times: median (min – max)."
   echo
   echo "| Metric | Naive (\`Dockerfile.naive\`) | Optimized (\`Dockerfile\`) |"
   echo "|---|---|---|"
   echo "| Runtime base | \`eclipse-temurin:21-jdk\` | \`eclipse-temurin:21-jre-alpine\` |"
-  echo "| Image size | ${NAIVE_MB} MB | ${OPT_MB} MB (−${REDUCTION} %) |"
+  echo "| Image size, compressed | ${NAIVE_MB} MB | ${OPT_MB} MB (−${REDUCTION} %) |"
+  echo "| Image size, unpacked on disk | $(disk_size lab09-naive) | $(disk_size lab09-optimized) |"
   echo "| Runs as | $(user_of lab09-naive) | $(user_of lab09-optimized) |"
   echo "| Startup (Spring \"Started … in\", ${STARTS} runs, \`--memory=512m\`) | $(median_range ${START[lab09-naive]}) s | $(median_range ${START[lab09-optimized]}) s |"
   echo "| Code-only rebuild (${REBUILDS} runs, warm cache) | $(median_range $REB_NAIVE) s ¹ | $(median_range $REB_OPT) s ² |"
