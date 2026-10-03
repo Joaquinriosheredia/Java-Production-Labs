@@ -17,7 +17,13 @@ echo "--- Building jar for the NAIVE image ---"
 
 echo ""
 echo "--- Building NAIVE image ---"
-docker build -q -f docker/Dockerfile.naive -t lab09-naive . > /dev/null
+# The lab's .dockerignore excludes target/, so Dockerfile.naive cannot see the jar
+# from the lab root. Its own header says it is built without a .dockerignore:
+# build it from a context that holds only target/*.jar. The Dockerfile is unchanged.
+NAIVE_CTX=$(mktemp -d)
+mkdir -p "$NAIVE_CTX/target" && cp target/*.jar "$NAIVE_CTX/target/"
+docker build -q -f docker/Dockerfile.naive -t lab09-naive "$NAIVE_CTX" > /dev/null
+rm -rf "$NAIVE_CTX"
 
 echo ""
 echo "--- Building OPTIMIZED image ---"
@@ -70,6 +76,8 @@ REDUCTION=$(python3 -c "print(f'{(1-$OPT_MB/$NAIVE_MB)*100:.0f}')")
   echo "| Code-only rebuild (one Java file changed, warm cache) | not measured | ${REBUILD_S} s |"
   echo
   echo "Not measured by this script: startup time, naive rebuild time."
+  echo
+  echo "The naive image is built from a context that holds only \`target/*.jar\`: the lab's \`.dockerignore\` excludes \`target/\`, so \`Dockerfile.naive\` cannot build from the lab root."
 } > benchmark/results/summary.md
 
 cat benchmark/results/summary.md
