@@ -1,0 +1,153 @@
+{
+    "metrics": {
+        "http_req_receiving": {
+            "avg": 0.05061511271007362,
+            "min": 0.012455,
+            "med": 0.040407,
+            "max": 2.43006,
+            "p(95)": 0.1030001999999999,
+            "p(99)": 0.16573836
+        },
+        "data_sent": {
+            "count": 1152692,
+            "rate": 23544.91533810338
+        },
+        "iterations": {
+            "count": 9937,
+            "rate": 202.97340808709808
+        },
+        "error_rate": {
+            "passes": 0,
+            "fails": 9937,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        },
+        "http_req_blocked": {
+            "p(99)": 0.22594987999999827,
+            "avg": 0.006715108885981625,
+            "min": 0.001386,
+            "med": 0.003103,
+            "max": 0.597182,
+            "p(95)": 0.005214
+        },
+        "vus": {
+            "value": 1,
+            "min": 1,
+            "max": 50
+        },
+        "data_received": {
+            "count": 2623786,
+            "rate": 53593.51781334555
+        },
+        "request_duration": {
+            "avg": 101.20096738693734,
+            "min": 0.029536,
+            "med": 101.527939,
+            "max": 114.233948,
+            "p(95)": 103.3017302,
+            "p(99)": 104.74727396
+        },
+        "iteration_duration": {
+            "p(99)": 205.445666,
+            "avg": 202.36682886122534,
+            "min": 200.632322,
+            "med": 202.207115,
+            "max": 215.426508,
+            "p(95)": 204.0776346
+        },
+        "http_req_connecting": {
+            "max": 0.531571,
+            "p(95)": 0,
+            "p(99)": 0.16296875999999927,
+            "avg": 0.002296967897755862,
+            "min": 0,
+            "med": 0
+        },
+        "checks": {
+            "passes": 19874,
+            "fails": 0,
+            "value": 1
+        },
+        "vus_max": {
+            "value": 50,
+            "min": 50,
+            "max": 50
+        },
+        "http_req_sending": {
+            "max": 0.513319,
+            "p(95)": 0.027252799999999865,
+            "p(99)": 0.08018363999999997,
+            "avg": 0.011316989835966513,
+            "min": 0.004045,
+            "med": 0.008183
+        },
+        "http_req_duration{expected_response:true}": {
+            "p(95)": 103.3017302,
+            "p(99)": 104.74727396,
+            "avg": 101.20096738693732,
+            "min": 0.029536,
+            "med": 101.527939,
+            "max": 114.233948
+        },
+        "http_req_failed": {
+            "fails": 9937,
+            "passes": 0,
+            "value": 0
+        },
+        "http_reqs": {
+            "count": 9937,
+            "rate": 202.97340808709808
+        },
+        "http_req_waiting": {
+            "med": 101.466703,
+            "max": 114.172148,
+            "p(95)": 103.23430640000001,
+            "p(99)": 104.68965012,
+            "avg": 101.13903528439175,
+            "min": 0
+        },
+        "http_req_duration": {
+            "med": 101.527939,
+            "max": 114.233948,
+            "p(95)": 103.3017302,
+            "p(99)": 104.74727396,
+            "avg": 101.20096738693732,
+            "min": 0.029536,
+            "thresholds": {
+                "p(95)<5000": false
+            }
+        },
+        "http_req_tls_handshaking": {
+            "min": 0,
+            "med": 0,
+            "max": 0,
+            "p(95)": 0,
+            "p(99)": 0,
+            "avg": 0
+        }
+    },
+    "root_group": {
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "status is 200": {
+                    "name": "status is 200",
+                    "path": "::status is 200",
+                    "id": "6210a8cd14cd70477eba5c5e4cb3fb5f",
+                    "passes": 9937,
+                    "fails": 0
+                },
+                "has throughputTps": {
+                    "name": "has throughputTps",
+                    "path": "::has throughputTps",
+                    "id": "0999523ee21f296225d89e09c4f33f8f",
+                    "passes": 9937,
+                    "fails": 0
+                }
+            },
+        "name": "",
+        "path": ""
+    }
+}
