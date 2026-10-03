@@ -6,6 +6,9 @@ cd "$(dirname "$0")"
 BASE_URL="${BASE_URL:-http://localhost:8086}"
 ROWS="${ROWS:-100000}"
 RUNS="${RUNS:-10}"
+PG_CONTAINER="${PG_CONTAINER:-lab07-postgres}"
+psql() { docker exec -i "$PG_CONTAINER" psql -U labs -d pgtuning_lab -v ON_ERROR_STOP=1 "$@"; }
+QUERY="SELECT * FROM events WHERE status = 'PENDING' ORDER BY occurred_at ASC LIMIT 100"
 
 RAW=results/raw
 rm -rf "$RAW" && mkdir -p "$RAW"
@@ -15,14 +18,27 @@ echo "=== Lab 07 — PostgreSQL Tuning Benchmark ==="
 echo "Seeding $ROWS rows..."
 curl -sf -X POST "$BASE_URL/api/v1/postgres/seed?rows=$ROWS" > "$RAW/seed.json"
 
+# Without fresh statistics the planner estimates a handful of PENDING rows and
+# picks a bitmap scan + sort instead of the ordered partial-index scan.
+echo "ANALYZE events..."
+psql -c "ANALYZE events;" > /dev/null
+psql -Atc "SELECT count(*) AS total, count(*) FILTER (WHERE status = 'PENDING') AS pending FROM events;" > "$RAW/row_counts.txt"
+
+# Plans for both modes, with the same planner settings the app uses.
+psql -c "EXPLAIN (ANALYZE, BUFFERS) $QUERY;" > "$RAW/explain_index.txt"
+psql -c "SET enable_indexscan = off; SET enable_bitmapscan = off; EXPLAIN (ANALYZE, BUFFERS) $QUERY;" > "$RAW/explain_seq.txt"
+cat "$RAW/explain_index.txt"
+if ! grep -Eq "Index (Only )?Scan using idx_events_pending" "$RAW/explain_index.txt"; then
+  echo "ERROR: index mode does not use an Index Scan on idx_events_pending (see $RAW/explain_index.txt)" >&2
+  exit 1
+fi
+grep -q "Seq Scan on events" "$RAW/explain_seq.txt" || { echo "ERROR: seq mode is not a Seq Scan" >&2; exit 1; }
+
 echo "Comparing seq scan vs index scan ($RUNS runs)..."
 for run in $(seq 1 "$RUNS"); do
   curl -sf "$BASE_URL/api/v1/postgres/compare?limit=100" > "$RAW/compare_run${run}.json"
   cat "$RAW/compare_run${run}.json"; echo
 done
-
-# Plans, to confirm which access path each mode actually used.
-curl -sf "$BASE_URL/api/v1/postgres/explain?query=pending_with_index" > "$RAW/explain_pending.json"
 
 stat() { python3 ../../scripts/bench_stats.py "$1" $RAW/compare_run*.json; }
 read -r sm smin smax n <<<"$(stat seqScan.durationNanos)"
@@ -42,7 +58,10 @@ ratio=$(python3 -c "print(f'{$sm/$im:.1f}')")
   echo '```'
   echo
   echo "Parameters: $ROWS seeded rows (~5 % PENDING), query \`status = 'PENDING' ORDER BY occurred_at LIMIT 100\`, $n runs of \`/compare\` (first run included, no warm-up)."
+  echo "Rows: $(tr '|' ' ' < "$RAW/row_counts.txt" | awk '{print $1" total, "$2" PENDING"}'). \`ANALYZE events\` runs after seeding."
   echo "\"Seq scan\" disables index and bitmap scans with \`SET LOCAL\`; timing is measured in the app around the SELECT."
+  echo
+  echo "Plans (\`EXPLAIN (ANALYZE, BUFFERS)\`): [\`raw/explain_index.txt\`](raw/explain_index.txt) — $(grep -Eo 'Index (Only )?Scan using idx_events_pending' "$RAW/explain_index.txt" | head -1); [\`raw/explain_seq.txt\`](raw/explain_seq.txt) — Seq Scan on events."
   echo
   echo "## Results — median (min – max) over $n runs"
   echo
