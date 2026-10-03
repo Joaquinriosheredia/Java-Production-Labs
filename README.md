@@ -54,37 +54,38 @@ See `make help` for all available commands.
 
 ## Labs
 
-| # | Lab | Core Concept | Port | Status | Benchmark real |
+| # | Lab | Core Concept | Port | Status | Benchmark results |
 |---|-----|-------------|------|--------|:--------------:|
-| 01 | [Virtual Threads](01_virtual_threads/) | Concurrency with Project Loom | 8080 | ✅ | ✅ |
-| 02 | [Resilience](02_resilience/) | Circuit Breaker, Retry, Bulkhead | 8081 | ✅ | ✅ |
-| 03 | [Rate Limiter](03_rate_limiter/) | Distributed token bucket (Redis) | 8082 | ✅ | ✅ |
-| 04 | [Transactional Outbox](04_outbox_kafka/) | At-least-once event delivery | 8083 | ✅ | ✅ |
-| 05 | [Saga Pattern](05_saga_pattern/) | Distributed transactions + compensation | 8084 | ✅ | ✅ |
-| 06 | [Redis vs Kafka](06_redis_vs_kafka/) | Messaging trade-off benchmark | 8085 | ✅ | ✅ |
-| 07 | [PostgreSQL Tuning](07_postgres_tuning/) | Partial indexes, EXPLAIN ANALYZE | 8086 | ✅ | ✅ |
-| 08 | [Kafka Streams](08_kafka_streams/) | Real-time windowed aggregation | 8087 | ✅ | ✅ |
-| 09 | [Docker Optimization](09_docker_optimization/) | Layered JARs, 62% smaller images | 8088 | ✅ | ✅ |
-| 10 | [Kubernetes Autoscaling](10_kubernetes_autoscaling/) | HPA on custom Prometheus metrics | 8089 | ✅ | ✅ |
+| 01 | [Virtual Threads](01_virtual_threads/) | Concurrency with Project Loom | 8080 | ✅ | [results](01_virtual_threads/benchmark/results/summary.md) |
+| 02 | [Resilience](02_resilience/) | Circuit Breaker, Retry, Bulkhead | 8081 | ✅ | [results](02_resilience/benchmark/summary.md) |
+| 03 | [Rate Limiter](03_rate_limiter/) | Distributed token bucket (Redis) | 8082 | ✅ | [results](03_rate_limiter/benchmark/results/summary.md) |
+| 04 | [Transactional Outbox](04_outbox_kafka/) | At-least-once event delivery | 8083 | ✅ | [results](04_outbox_kafka/benchmark/results/summary.md) |
+| 05 | [Saga Pattern](05_saga_pattern/) | Distributed transactions + compensation | 8084 | ✅ | [results](05_saga_pattern/benchmark/results/summary.md) |
+| 06 | [Redis vs Kafka](06_redis_vs_kafka/) | Messaging trade-off benchmark | 8085 | ✅ | [results](06_redis_vs_kafka/benchmark/results/summary.md) |
+| 07 | [PostgreSQL Tuning](07_postgres_tuning/) | Partial indexes, EXPLAIN ANALYZE | 8086 | ✅ | [results](07_postgres_tuning/benchmark/results/summary.md) |
+| 08 | [Kafka Streams](08_kafka_streams/) | Real-time windowed aggregation | 8087 | ✅ | [results](08_kafka_streams/benchmark/results/summary.md) |
+| 09 | [Docker Optimization](09_docker_optimization/) | Layered JARs, multi-stage build | 8088 | ✅ | [results](09_docker_optimization/benchmark/results/summary.md) |
+| 10 | [Kubernetes Autoscaling](10_kubernetes_autoscaling/) | HPA on custom Prometheus metrics | 8089 | ✅ | [results](10_kubernetes_autoscaling/benchmark/results/summary.md) |
 
 ---
 
 ## Quality Matrix
 
-Every lab ships all of these:
+Benchmark: ✅ only where a results file is versioned in `<lab>/benchmark/`.
+Testcontainers: ✅ only where a test actually starts a container (labs 03–07). Labs 01, 02, 08, 09 and 10 declare the dependency but no test uses it.
 
 | Lab | ADR | Tests | Testcontainers | Benchmark | Metrics | Chaos |
 |-----|-----|-------|----------------|-----------|---------|-------|
-| 01 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 02 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 01 | ✅ | ✅ | — | ✅ | ✅ | ✅ |
+| 02 | ✅ | ✅ | — | ✅ | ✅ | ✅ |
 | 03 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 04 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 05 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 06 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 07 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 08 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 09 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 10 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 08 | ✅ | ✅ | — | ✅ | ✅ | ✅ |
+| 09 | ✅ | ✅ | — | ✅ | ✅ | ✅ |
+| 10 | ✅ | ✅ | — | ✅ | ✅ | ✅ |
 
 ---
 
@@ -92,42 +93,53 @@ Every lab ships all of these:
 
 7 real bugs found and fixed using java-vibe-guard + security-guidance analysis:
 
-- [WorkloadController](file:///home/usuariojoaquin/Java-Production-Labs/10_kubernetes_autoscaling/app/src/main/java/com/labs/k8s/controller/WorkloadController.java#L29): DoS via unbounded `workMs` parameter (`@Min`/`@Max` added)
-- [SagaOrderService](file:///home/usuariojoaquin/Java-Production-Labs/05_saga_pattern/app/src/main/java/com/labs/saga/service/SagaOrderService.java#L45): Kafka send without timeout → thread starvation (`.get(5s)`)
-- [StreamController](file:///home/usuariojoaquin/Java-Production-Labs/08_kafka_streams/app/src/main/java/com/labs/kafkastreams/controller/StreamController.java#L53): Kafka send without timeout → thread starvation (`.get(5s)`)
-- [OrderSagaOrchestrator](file:///home/usuariojoaquin/Java-Production-Labs/05_saga_pattern/app/src/main/java/com/labs/saga/saga/OrderSagaOrchestrator.java#L59): 6 `@KafkaListener` without `@RetryableTopic` → silent message loss
-- [docker-compose.yml](file:///home/usuariojoaquin/Java-Production-Labs/docker-compose.yml): Zookeeper deprecated → migrated to KRaft mode
-- [OrderController](file:///home/usuariojoaquin/Java-Production-Labs/04_outbox_kafka/app/src/main/java/com/labs/outbox/controller/OrderController.java#L40) + [SagaController](file:///home/usuariojoaquin/Java-Production-Labs/05_saga_pattern/app/src/main/java/com/labs/saga/controller/SagaController.java#L45): MDC logging added for observability
-- [OrderController](file:///home/usuariojoaquin/Java-Production-Labs/04_outbox_kafka/app/src/main/java/com/labs/outbox/controller/OrderController.java#L34) + [SagaController](file:///home/usuariojoaquin/Java-Production-Labs/05_saga_pattern/app/src/main/java/com/labs/saga/controller/SagaController.java#L40): Log injection via MDC sanitized (CWE-117)
+- [WorkloadController](10_kubernetes_autoscaling/app/src/main/java/com/labs/k8s/controller/WorkloadController.java#L29): DoS via unbounded `workMs` parameter (`@Min`/`@Max` added)
+- [SagaOrderService](05_saga_pattern/app/src/main/java/com/labs/saga/service/SagaOrderService.java#L45): Kafka send without timeout → thread starvation (`.get(5s)`)
+- [StreamController](08_kafka_streams/app/src/main/java/com/labs/kafkastreams/controller/StreamController.java#L53): Kafka send without timeout → thread starvation (`.get(5s)`)
+- [OrderSagaOrchestrator](05_saga_pattern/app/src/main/java/com/labs/saga/saga/OrderSagaOrchestrator.java#L59): 6 `@KafkaListener` without `@RetryableTopic` → silent message loss
+- [docker-compose.yml](docker-compose.yml): Zookeeper deprecated → migrated to KRaft mode
+- [OrderController](04_outbox_kafka/app/src/main/java/com/labs/outbox/controller/OrderController.java#L40) + [SagaController](05_saga_pattern/app/src/main/java/com/labs/saga/controller/SagaController.java#L45): MDC logging added for observability
+- [OrderController](04_outbox_kafka/app/src/main/java/com/labs/outbox/controller/OrderController.java#L34) + [SagaController](05_saga_pattern/app/src/main/java/com/labs/saga/controller/SagaController.java#L40): Log injection via MDC sanitized (CWE-117)
 
 ---
 
 ## Real Benchmark Results
 
-Executed on local hardware: WSL2 Ubuntu, 16 CPUs, 15.57 GB RAM, Docker in-process.
-Full methodology and raw data in each lab's `benchmark/results/summary.md`.
+Every figure below comes from a versioned results file, linked in each section.
+Labs 01, 07 and 09 were re-run on 2026-10-03 with the repo's own `run-benchmark.sh`; their results record environment, date and commit.
 
 ### Lab 01 — Virtual Threads
 
-| Metric | Platform Threads | Virtual Threads |
-|--------|:----------------:|:---------------:|
-| Throughput | baseline | **7.4× higher** |
-| p99 latency | 5,817 ms | **167 ms** |
+Median (min – max) over 5 runs per mode and load, 200 tasks × 100 ms per request — [results](01_virtual_threads/benchmark/results/summary.md).
+The two loads are separate experiments: compare modes within a load, not across loads.
+
+| VUs | Metric | Platform Threads (pool = 20) | Virtual Threads |
+|----:|--------|:----------------:|:---------------:|
+| 50 | Throughput | 36.7 req/s (36.6 – 37.5) | **207.1 req/s** (201.7 – 208.0) |
+| 50 | p50 latency | 1,008 ms (1,008 – 1,008) | **102 ms** (101 – 102) |
+| 50 | p99 latency | 1,020 ms (1,019 – 1,026) | **105 ms** (104 – 112) |
+| 200 | Throughput | 117.5 req/s (116.5 – 119.1) | **827.5 req/s** (808.2 – 830.4) |
+| 200 | p50 latency | 1,264 ms (1,254 – 1,271) | **101 ms** (101 – 101) |
+| 200 | p99 latency | 1,731 ms (1,706 – 1,735) | **107 ms** (106 – 109) |
 
 Virtual threads eliminate the pool-size bottleneck under I/O-bound concurrency.
 No reactive programming required.
 
 ### Lab 02 — Resilience4j
 
+Source: [results](02_resilience/benchmark/summary.md).
+
 | Metric | Value |
 |--------|-------|
 | Circuit OPEN duration | 27 s |
-| Calls blocked while OPEN | 90,680 |
-| Recovery (HALF_OPEN → CLOSED) | automatic, < 5 s |
+| Calls rejected while OPEN (`not_permitted`) | 90,680 |
+| Recovery (OPEN → CLOSED) | automatic, ~5 s after the failure cleared |
 
 Bulkhead + CircuitBreaker + Retry chain measured end-to-end under injected failure rate.
 
 ### Lab 03 — Redis Rate Limiter
+
+Source: [results](03_rate_limiter/benchmark/results/summary.md).
 
 | Metric | Value |
 |--------|-------|
@@ -139,11 +151,13 @@ Distributed token bucket — correct under multiple app instances sharing the sa
 
 ### Lab 04 — Transactional Outbox
 
+Source: [results](04_outbox_kafka/benchmark/results/summary.md).
+
 | Metric | Value |
 |--------|-------|
 | Throughput | 163.8 req/s |
 | Data loss under Kafka kill | zero |
-| Drain rate improvement (tuned poller) | +70% |
+| Drain rate (tuned poller) | 88.9 → 150.8 events/s (+70%) |
 
 A silent data-loss bug (order created, event never enqueued) was found and fixed via chaos testing.
 The outbox pattern prevents the dual-write race condition at the DB transaction boundary.
@@ -152,40 +166,47 @@ Verification available: [java-vibe-guard --verify VIBE-001](https://github.com/J
 
 ### Lab 05 — Saga Pattern
 
+Source: [results](05_saga_pattern/benchmark/results/summary.md).
+
 | Metric | Value |
 |--------|-------|
 | Orders stuck in `STARTED` | 71.8% |
 | Race condition demonstrated | dual-write without saga |
-| HTTP response during failure | 200 OK (silent failure) |
+| HTTP response during failure | 202 Accepted, 0% HTTP errors (silent failure) |
 
 Choreography-based saga over Kafka. The benchmark intentionally demonstrates the failure mode —
 services appearing healthy while distributed state is inconsistent.
 
 ### Lab 06 — Redis Pub/Sub vs Kafka
 
+Source: [results](06_redis_vs_kafka/benchmark/results/summary.md).
+
 | Metric | Redis Pub/Sub | Kafka |
 |--------|:-------------:|:-----:|
-| Throughput (default API) | 2,227 msg/s | 47,619 msg/s |
-| Messages lost on broker crash | **200 / 200** | 0 committed |
-| Recovery after restart | impossible | 100% (full replay) |
+| Throughput (default API, 1,000 msgs, best of 3) | 2,227 msg/s | 47,619 msg/s (enqueue: 21 ms) |
+| Messages sent during broker crash, lost | **200 / 200** | **200 / 200** (producer `delivery.timeout.ms` 10 s) |
+| Messages committed before the crash | — (no persistence) | intact, replayed after restart |
 
 The throughput gap reflects an API asymmetry: Redis `convertAndSend()` blocks per-message
 for a full TCP round-trip (~419 µs); Kafka `send()` enqueues to an in-memory buffer (~7 µs)
-and flushes asynchronously. In sync-equivalent mode, Redis is 4–10× faster than Kafka.
-Redis wins on latency (< 1 ms end-to-end); Kafka wins on durability guarantees.
+and flushes asynchronously. Neither backend delivered what was sent while its broker was down;
+Kafka keeps what was committed before the crash, Redis keeps nothing.
 
 ### Lab 07 — PostgreSQL Optimization
 
-| Metric | Before | After |
-|--------|:------:|:-----:|
-| Query latency | 285 ms | 12 ms |
-| Speedup | — | **26×** |
-| Technique | sequential scan | partial index |
+Median (min – max) over 10 runs — [results](07_postgres_tuning/benchmark/results/summary.md).
 
-100K-row table, 5% PENDING rows. Partial index on `(status)` WHERE `status = 'PENDING'`
-eliminates the full table scan. `EXPLAIN (ANALYZE, BUFFERS)` output in ADR-0001.
+| Metric | Sequential scan | Partial index (Index Scan) |
+|--------|:------:|:-----:|
+| Query latency | 7.45 ms (6.32 – 29.56) | **1.52 ms** (1.11 – 4.71) |
+| Ratio of medians | — | **4.9×** |
+
+100K-row table (5,084 PENDING), `ANALYZE` after seeding, partial index on `occurred_at` WHERE `status = 'PENDING'`.
+Plans (`EXPLAIN (ANALYZE, BUFFERS)`) and table scan counters are versioned with the results.
 
 ### Lab 08 — Kafka Streams
+
+Source: [results](08_kafka_streams/benchmark/results/summary.md).
 
 | Metric | Baseline | Post-Recovery |
 |--------|:--------:|:-------------:|
@@ -196,21 +217,28 @@ eliminates the full table scan. `EXPLAIN (ANALYZE, BUFFERS)` output in ADR-0001.
 | Recovery time | — | **< 200 ms** (changelog replay) |
 
 Critical finding: `actuator/health` reports `UP` and Streams state shows `RUNNING` even when Kafka is unreachable — standard health probes are false positives.
-During Kafka outage: `kafkaTemplate.send().get()` blocks HTTP threads synchronously; 60% request failure rate at 10 s timeout.
+During Kafka outage: `kafkaTemplate.send().get()` blocks HTTP threads synchronously; 60% of requests failed (24/40) with a 15 s client timeout.
 `at_least_once` guarantee with no duplicates on clean restart; lag=0 immediately after broker recovery.
 
 ### Lab 09 — Docker Optimization
 
+Both images built from this repo — [results](09_docker_optimization/benchmark/results/summary.md). Times: median (min – max).
+
 | Metric | Naive Image | Optimized Image |
 |--------|:-----------:|:---------------:|
-| Tamaño imagen | 233 MB | **79 MB** (−66.1%) |
-| Startup | 2917 ms | **2445 ms** (−472 ms) |
-| Rebuild en CI con BuildKit | 10 s | **3-5 s** (4-8× speedup) |
-| Seguridad | root | **nonroot (65532)** |
+| Runtime base | `eclipse-temurin:21-jdk` | `eclipse-temurin:21-jre-alpine` |
+| Image size, compressed (pull/push) | 247 MB | **94 MB** (−62%) |
+| Image size, unpacked on disk | 776 MB | **329 MB** |
+| Runs as | root | **non-root** (`appuser`, uid 100) |
+| Startup (JVM uptime at ready, 5 runs) | 2.13 s (2.10 – 2.14) | 2.15 s (2.07 – 2.22) |
+| Code-only rebuild (3 runs, warm cache) | 9.10 s (8.98 – 9.32) ¹ | 11.78 s (10.82 – 12.45) ² |
 
-- **Memoria**: ZGC pre-reserva heap correctamente para containers (comportamiento esperado).
+¹ `./mvnw package` on the host + `docker build`. ² `docker build` only (the jar is compiled in the build stage).
+The optimized image is smaller and non-root; it does not start faster, and its code-only rebuild is not faster on this machine.
 
 ### Lab 10 — Kubernetes HPA
+
+Source: [results](10_kubernetes_autoscaling/benchmark/results/summary.md).
 
 - CPU con 50 VUs: 110m (threshold: 350m) — HPA nunca disparó
 - 0% error rate con 1 solo pod durante toda la prueba
@@ -223,8 +251,8 @@ During Kafka outage: `kafkaTemplate.send().get()` blocks HTTP threads synchronou
 ## What Each Lab Demonstrates
 
 ### 01 · Virtual Threads
-Java 21 Project Loom in production. 7.4× throughput improvement measured under I/O-bound load.
-p99 latency drops from 5,817 ms (platform thread pool) to 167 ms (virtual threads).
+Java 21 Project Loom against a 20-thread platform pool, I/O-bound load (medians of 5 runs):
+207 vs 37 req/s at 50 VUs, 828 vs 118 req/s at 200 VUs; virtual-thread p99 stays near 105 ms at both loads.
 No reactive programming needed.
 
 ### 02 · Resilience
@@ -251,21 +279,22 @@ Full state machine visible in a single DB query.
 
 ### 06 · Redis vs Kafka
 Side-by-side benchmark: Redis Pub/Sub (2,227 msg/s, ephemeral) vs Kafka (47,619 msg/s async, durable).
-100% message loss in Redis during broker crash; Kafka recovers with full replay from committed offsets.
+During a broker crash both lose what is sent (200/200); Kafka replays what was committed before it, Redis has nothing to replay.
 The throughput gap is an API asymmetry, not a speed claim — see benchmark results for full analysis.
 
 ### 07 · PostgreSQL Tuning
-100K rows, 5% PENDING. Sequential scan: 285ms. Partial index: 12ms. 26× improvement.
-`EXPLAIN (ANALYZE, BUFFERS)` output before and after included in ADR-0001.
+100K rows, 5% PENDING. Sequential scan: 7.45 ms. Partial index (Index Scan): 1.52 ms. 4.9× (medians of 10 runs).
+`EXPLAIN (ANALYZE, BUFFERS)` of both plans versioned in `benchmark/results/raw/`.
 
 ### 08 · Kafka Streams
 Tumbling 60-second window counting orders per user. 46.8 rps baseline, p99=4ms, lag=0.
-Kafka broker killed mid-load: 60% error rate, health check false-positive (reports UP while Kafka is down).
+Kafka broker killed mid-load: 60% error rate (24/40), health check false-positive (reports UP while Kafka is down).
 Recovery to RUNNING in < 200ms via changelog topic replay — no duplicates, lag=0 immediately after restart.
 
 ### 09 · Docker Optimization
-Naive image: 520MB, 3-minute rebuilds, runs as root, ignores container memory limits.
-Optimized image: 195MB, 15-second code-only rebuilds, non-root, `-XX:MaxRAMPercentage=75.0`.
+Naive image: full JDK, single fat-JAR layer, runs as root.
+Optimized image: multi-stage build, layered JAR, JRE on Alpine, non-root (`appuser`), `-XX:MaxRAMPercentage=75.0`.
+247 → 94 MB compressed (−62%); same startup; see the results for rebuild times.
 
 ### 10 · Kubernetes Autoscaling
 HPA v2 on custom Prometheus metric `lab_active_requests_gauge`.
@@ -285,7 +314,7 @@ Or per lab:
 cd 01_virtual_threads && ./mvnw verify
 ```
 
-Tests use Testcontainers — no mocks for infrastructure (PostgreSQL, Redis, Kafka).
+Labs 03–07 run their integration tests against real PostgreSQL, Redis and Kafka with Testcontainers.
 
 ---
 
@@ -315,7 +344,7 @@ This repository is designed to be evaluated, not just read:
 |--------|--------------|
 | Technical decisions with trade-offs | `<lab>/docs/adr/ADR-0001.md` |
 | Production-grade tests | `<lab>/app/src/test/` |
-| Real infrastructure in tests | Testcontainers — no mocks |
+| Real infrastructure in tests | Testcontainers in labs 03–07 |
 | Measurable performance claims | `<lab>/benchmark/README.md` |
 | Failure scenarios | `<lab>/chaos/simulate-failure.sh` |
 | CI pipeline | `.github/workflows/ci.yml` |
@@ -324,9 +353,9 @@ This repository is designed to be evaluated, not just read:
 
 ## How this was built
 
-This repository was developed with AI assistance (Claude) for scaffolding, code generation, and test setup. All labs have been reviewed, compiled, tested locally, and benchmarked by the author.
+This repository was developed with AI assistance (Claude) for scaffolding, code generation, and test setup. All labs have been reviewed, compiled and tested locally by the author.
 
-The benchmark results are real — executed on local hardware (WSL2 Ubuntu, 16 CPUs, 15.57GB RAM). Every architectural decision is documented in the ADRs and defensible in a technical interview.
+Every benchmark figure in this README links to a versioned results file in `<lab>/benchmark/`. Every architectural decision is documented in the ADRs.
 
 ---
 

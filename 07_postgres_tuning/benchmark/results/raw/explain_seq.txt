@@ -1,0 +1,20 @@
+SET
+SET
+                                                      QUERY PLAN                                                      
+----------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=2666.18..2666.43 rows=100 width=59) (actual time=6.587..6.597 rows=100 loops=1)
+   Buffers: shared hit=1223
+   ->  Sort  (cost=2666.18..2679.01 rows=5133 width=59) (actual time=6.586..6.590 rows=100 loops=1)
+         Sort Key: occurred_at
+         Sort Method: top-N heapsort  Memory: 47kB
+         Buffers: shared hit=1223
+         ->  Seq Scan on events  (cost=0.00..2470.00 rows=5133 width=59) (actual time=0.006..6.163 rows=5084 loops=1)
+               Filter: ((status)::text = 'PENDING'::text)
+               Rows Removed by Filter: 94916
+               Buffers: shared hit=1220
+ Planning:
+   Buffers: shared hit=135
+ Planning Time: 0.966 ms
+ Execution Time: 6.639 ms
+(14 rows)
+

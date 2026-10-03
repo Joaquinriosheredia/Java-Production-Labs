@@ -1,0 +1,4 @@
+startup_s lab09-naive: 2.138 2.143 2.135 2.097 2.109 
+startup_s lab09-optimized: 2.217 2.156 2.068 2.077 2.147 
+rebuild_s lab09-naive (mvnw package + docker build): 9.10 8.98 9.32 
+rebuild_s lab09-optimized (docker build): 12.45 10.82 11.78 

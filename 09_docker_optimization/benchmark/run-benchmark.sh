@@ -3,23 +3,119 @@ set -euo pipefail
 echo "=== Lab 09 — Docker Optimization Benchmark ==="
 cd "$(dirname "$0")/.."
 
+STARTS="${STARTS:-5}"      # container starts per image
+REBUILDS="${REBUILDS:-3}"  # code-only rebuilds per image
+
+RAW=benchmark/results/raw
+rm -rf "$RAW" && mkdir -p "$RAW"
+bash ../scripts/bench-env.sh "$RAW/env.txt"
+
+now() { date +%s.%N; }
+elapsed() { python3 -c "print(f'{$2-$1:.2f}')"; }
+median_range() { python3 -c "import statistics,sys; v=[float(x) for x in sys.argv[1:]]; print(f'{statistics.median(v):.2f} ({min(v):.2f} – {max(v):.2f})')" "$@"; }
+
 echo ""
-echo "--- Building NAIVE image ---"
-time docker build -f docker/Dockerfile.naive -t lab09-naive . 2>&1 | tail -3
-NAIVE_SIZE=$(docker image inspect lab09-naive --format='{{.Size}}' | awk '{printf "%.0fMB", $1/1024/1024}')
+echo "--- Building NAIVE image (jar built on the host first) ---"
+./mvnw -q package -DskipTests
+docker build -q -f docker/Dockerfile.naive -t lab09-naive . > /dev/null
 
 echo ""
 echo "--- Building OPTIMIZED image ---"
-time docker build -f docker/Dockerfile -t lab09-optimized . 2>&1 | tail -3
-OPT_SIZE=$(docker image inspect lab09-optimized --format='{{.Size}}' | awk '{printf "%.0fMB", $1/1024/1024}')
+docker build -q -f docker/Dockerfile -t lab09-optimized . > /dev/null
 
+for img in lab09-naive lab09-optimized; do
+  docker image inspect "$img" > "$RAW/$img.inspect.json"
+  docker history --no-trunc --format '{{.Size}}\t{{.CreatedBy}}' "$img" > "$RAW/$img.history.txt"
+done
+
+# Startup: JVM uptime when Spring Boot reports ready ("process running for X"), one fresh
+# container per run. The "Started ... in X seconds" figure is not used: its clock can start
+# late (one run reported 0.675 s with the same 2.1 s of JVM uptime as the others).
 echo ""
-echo "======= Results ======="
-echo "Naive image size    : $NAIVE_SIZE"
-echo "Optimized image size: $OPT_SIZE"
+echo "--- Startup ($STARTS runs per image) ---"
+startup() {
+  local img="$1" run="$2" cid secs
+  cid=$(docker run -d --memory=512m "$img")
+  for _ in $(seq 1 120); do
+    secs=$(docker logs "$cid" 2>&1 | sed -n 's/.*Started .*(process running for \([0-9.]*\)).*/\1/p' | head -1)
+    [ -n "$secs" ] && break
+    sleep 0.5
+  done
+  docker logs "$cid" > "$RAW/${img}.startup${run}.log" 2>&1
+  docker rm -f "$cid" > /dev/null
+  [ -n "$secs" ] || { echo "ERROR: $img did not start" >&2; exit 1; }
+  echo "$secs"
+}
+declare -A START
+for img in lab09-naive lab09-optimized; do
+  START[$img]=""
+  for run in $(seq 1 "$STARTS"); do
+    s=$(startup "$img" "$run"); echo "$img run $run: ${s}s"
+    START[$img]+="$s "
+  done
+done
+
+# Code-only rebuild: change the content of one Java file (Docker caches COPY by
+# content, so touch alone would be a full cache hit), rebuild, restore.
+# Naive: a code change also needs the host-side jar build, so it is timed too.
 echo ""
-echo "--- Simulating code-only rebuild (optimized) ---"
-touch app/src/main/java/com/labs/dockeropt/DockerOptimizationApplication.java
-time docker build -f docker/Dockerfile -t lab09-optimized . 2>&1 | tail -3
-echo ""
-echo "Note: Only the 'application' layer was rebuilt. All other layers used cache."
+echo "--- Code-only rebuild ($REBUILDS runs per image) ---"
+SRC=app/src/main/java/com/labs/dockeropt/DockerOptimizationApplication.java
+cp "$SRC" "$RAW/.src.bak"
+trap 'cp "$RAW/.src.bak" "$SRC" && rm -f "$RAW/.src.bak"' EXIT
+REB_NAIVE=""; REB_OPT=""
+for run in $(seq 1 "$REBUILDS"); do
+  cp "$RAW/.src.bak" "$SRC"; echo "// rebuild probe naive $run $(date +%s%N)" >> "$SRC"
+  t0=$(now); ./mvnw -q package -DskipTests && docker build -q -f docker/Dockerfile.naive -t lab09-naive-rebuild . > /dev/null; t1=$(now)
+  rn=$(elapsed "$t0" "$t1"); REB_NAIVE+="$rn "
+  cp "$RAW/.src.bak" "$SRC"; echo "// rebuild probe optimized $run $(date +%s%N)" >> "$SRC"
+  t0=$(now); docker build -q -f docker/Dockerfile -t lab09-optimized-rebuild . > /dev/null; t1=$(now)
+  ro=$(elapsed "$t0" "$t1"); REB_OPT+="$ro "
+  echo "run $run: naive ${rn}s, optimized ${ro}s"
+done
+{
+  echo "startup_s lab09-naive: ${START[lab09-naive]}"
+  echo "startup_s lab09-optimized: ${START[lab09-optimized]}"
+  echo "rebuild_s lab09-naive (mvnw package + docker build): $REB_NAIVE"
+  echo "rebuild_s lab09-optimized (docker build): $REB_OPT"
+} > "$RAW/timings.txt"
+
+# With the containerd image store, inspect .Size is the compressed content size (pull/push);
+# `docker images` shows the unpacked size on disk. Both are recorded.
+size_mb() { docker image inspect "$1" --format='{{.Size}}' | awk '{printf "%.0f", $1/1000/1000}'; }
+disk_size() { docker images --format '{{.Size}}' "$1:latest"; }
+docker images --format '{{.Repository}}:{{.Tag}}\t{{.ID}}\t{{.Size}}' | grep '^lab09-' > "$RAW/docker-images.txt"
+user_of() { docker run --rm --entrypoint sh "$1" -c 'echo "$(id -un) (uid $(id -u))"'; }
+NAIVE_MB=$(size_mb lab09-naive); OPT_MB=$(size_mb lab09-optimized)
+REDUCTION=$(python3 -c "print(f'{(1-$OPT_MB/$NAIVE_MB)*100:.0f}')")
+
+{
+  echo "# Lab 09 — Benchmark results"
+  echo
+  echo "Generated by \`benchmark/run-benchmark.sh\`. Raw data: \`results/raw/\` (image inspect, layer history, startup logs, timings)."
+  echo
+  echo "## Environment"
+  echo
+  echo '```'
+  cat "$RAW/env.txt"
+  echo "docker_builder=legacy (no buildx installed)"
+  echo '```'
+  echo
+  echo "## Results"
+  echo
+  echo "Compressed size: \`docker image inspect .Size\` (containerd image store: compressed content, what is pulled/pushed), MB = 10^6 bytes. On-disk size: \`docker images\` (unpacked). Times: median (min – max)."
+  echo
+  echo "| Metric | Naive (\`Dockerfile.naive\`) | Optimized (\`Dockerfile\`) |"
+  echo "|---|---|---|"
+  echo "| Runtime base | \`eclipse-temurin:21-jdk\` | \`eclipse-temurin:21-jre-alpine\` |"
+  echo "| Image size, compressed | ${NAIVE_MB} MB | ${OPT_MB} MB (−${REDUCTION} %) |"
+  echo "| Image size, unpacked on disk | $(disk_size lab09-naive) | $(disk_size lab09-optimized) |"
+  echo "| Runs as | $(user_of lab09-naive) | $(user_of lab09-optimized) |"
+  echo "| Startup (JVM uptime at \"Started\", ${STARTS} runs, \`--memory=512m\`) | $(median_range ${START[lab09-naive]}) s | $(median_range ${START[lab09-optimized]}) s |"
+  echo "| Code-only rebuild (${REBUILDS} runs, warm cache) | $(median_range $REB_NAIVE) s ¹ | $(median_range $REB_OPT) s ² |"
+  echo
+  echo "¹ \`./mvnw package\` on the host + \`docker build\`: the naive image needs the jar built first."
+  echo "² \`docker build\` only: the jar is compiled inside the build stage."
+} > benchmark/results/summary.md
+
+cat benchmark/results/summary.md

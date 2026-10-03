@@ -16,8 +16,8 @@ Every query does a full table scan. Under load this causes CPU spikes and slow r
 graph LR
     A[Poller every 1s] -->|WHERE status=PENDING| B[Seq Scan\n950K rows filtered]
     A -->|WHERE status=PENDING| C[Partial Index Scan\nidx_events_pending]
-    B -->|285ms| D[Result: 50K rows]
-    C -->|12ms| D
+    B --> D[Result: first 100 PENDING rows]
+    C --> D
 ```
 
 ---
@@ -31,7 +31,7 @@ CREATE INDEX idx_events_pending ON events(occurred_at ASC)
     WHERE status = 'PENDING';
 ```
 
-Result: **23× faster queries** on 100K rows. Scales better than full index.
+Measured on 100K rows (5% PENDING): 7.45 ms with a sequential scan vs 1.52 ms with an Index Scan on the partial index, **4.9×** (medians of 10 runs) — [`benchmark/results/summary.md`](benchmark/results/summary.md).
 
 ---
 

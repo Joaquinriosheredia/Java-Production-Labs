@@ -1,0 +1,1 @@
+seq_scan_delta=10 idx_scan_delta=10 runs=10

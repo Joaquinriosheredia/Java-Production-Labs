@@ -66,14 +66,16 @@ Redis pays full network RTT per message; Kafka defers all network I/O to a backg
 
 ### How the numbers change under equivalent conditions
 
+> Only the first row is measured. The other rows are **estimates, not measurements** (no versioned result).
+
 | Comparison mode               | Redis        | Kafka           |
 |-------------------------------|:------------:|:---------------:|
 | Default Spring API (measured) | 2,227 msg/s  | 47,619 msg/s    |
-| Async pipeline (Redis raw API)| ~50–100K/s   | ~50–100K/s      |
-| **Sync per-message** (`get()`) | ~2,000/s    | **~200–500/s**  |
-| End-to-end latency (LAN)      | **< 1 ms**   | 5–20 ms         |
+| Async pipeline (Redis raw API) — *estimate* | ~50–100K/s   | ~50–100K/s      |
+| **Sync per-message** (`get()`) — *estimate* | ~2,000/s    | **~200–500/s**  |
+| End-to-end latency (LAN) — *estimate* | **< 1 ms**   | 5–20 ms         |
 
-In **sync mode**, Redis is 4–10× faster than Kafka because Kafka adds disk I/O and
+In **sync mode**, Redis is expected (not measured) to be faster than Kafka because Kafka adds disk I/O and
 ISR replication overhead that Redis (in-memory) doesn't have.
 In **async mode**, both systems deliver comparable throughput.
 Redis has genuinely **lower end-to-end latency** — `PUBLISH` fans out before returning.

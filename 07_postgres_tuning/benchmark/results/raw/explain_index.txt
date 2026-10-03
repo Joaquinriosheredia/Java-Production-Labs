@@ -1,0 +1,12 @@
+                                                                QUERY PLAN                                                                
+------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.28..98.49 rows=100 width=59) (actual time=0.027..0.434 rows=100 loops=1)
+   Buffers: shared hit=102
+   ->  Index Scan using idx_events_pending on events  (cost=0.28..5041.13 rows=5133 width=59) (actual time=0.026..0.426 rows=100 loops=1)
+         Buffers: shared hit=102
+ Planning:
+   Buffers: shared hit=135
+ Planning Time: 0.972 ms
+ Execution Time: 0.465 ms
+(8 rows)
+

@@ -2,8 +2,8 @@
 
 ## Problem
 
-The naive Dockerfile produces a 520MB image that:
-- Takes 3+ minutes to rebuild on every code change
+The naive Dockerfile produces an image that:
+- Ships the full JDK and a single fat-JAR layer, so every code change rebuilds and pushes the whole jar
 - Runs as root (security risk)
 - Ignores container memory limits (→ OOM kills in Kubernetes)
 
@@ -14,24 +14,25 @@ The naive Dockerfile produces a 520MB image that:
 ## Architecture: Layer Strategy
 
 ```
-Layer 1: eclipse-temurin:21-jre-alpine  (cached, ~180MB)
-Layer 2: dependencies/                   (cached unless pom.xml changes, ~60MB)
-Layer 3: spring-boot-loader/             (cached, ~500KB)
+Layer 1: eclipse-temurin:21-jre-alpine  (cached)
+Layer 2: dependencies/                   (cached unless pom.xml changes)
+Layer 3: spring-boot-loader/             (cached)
 Layer 4: snapshot-dependencies/          (cached unless SNAPSHOT deps change)
-Layer 5: application/                    (rebuilt on code change, ~2MB)
+Layer 5: application/                    (rebuilt on code change)
 ```
 
-Code change → only Layer 5 rebuilds → 15s vs 3 minutes.
+Code change → only Layer 5 rebuilds.
 
 ---
 
 ## Comparison
 
-| Metric | Naive | Optimized |
+Measured on 2026-10-03 with `benchmark/run-benchmark.sh` ([`benchmark/results/summary.md`](benchmark/results/summary.md)): 247 → 94 MB compressed (−62%), 776 → 329 MB unpacked; root → `appuser`; startup 2.13 vs 2.15 s (no difference); code-only rebuild 9.10 s (host build + naive image) vs 11.78 s (optimized image).
+
+| Property | Naive | Optimized |
 |--------|-------|-----------|
-| Image size | ~520MB | ~195MB |
-| Rebuild (code change) | ~3min | ~15s |
-| Runs as root | Yes | No |
+| Runtime base | `eclipse-temurin:21-jdk` | `eclipse-temurin:21-jre-alpine` |
+| Runs as | root | non-root (`appuser`) |
 | Container memory aware | No | Yes |
 
 ---

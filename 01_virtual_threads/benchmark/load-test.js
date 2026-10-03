@@ -7,14 +7,15 @@ const TASKS = parseInt(__ENV.TASKS || '200');
 const LATENCY_MS = parseInt(__ENV.LATENCY_MS || '100');
 const MODE = __ENV.MODE || 'virtual';
 const POOL_SIZE = parseInt(__ENV.POOL_SIZE || '20');
+const VUS = parseInt(__ENV.VUS || '50');
 
 const requestDuration = new Trend('request_duration', true);
 const errorRate = new Rate('error_rate');
 
 export const options = {
   stages: [
-    { duration: '10s', target: 50 },   // ramp-up
-    { duration: '30s', target: 50 },   // steady state
+    { duration: '10s', target: VUS },  // ramp-up
+    { duration: '30s', target: VUS },  // steady state
     { duration: '10s', target: 0 },    // ramp-down
   ],
   thresholds: {

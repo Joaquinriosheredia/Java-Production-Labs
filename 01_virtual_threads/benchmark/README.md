@@ -29,6 +29,9 @@ bash run-benchmark.sh
 
 # Custom params
 TASKS=500 LATENCY_MS=50 POOL_SIZE=10 bash run-benchmark.sh
+
+# Loads and runs (defaults: VUS_LIST="50 200", RUNS=5)
+VUS_LIST="200" RUNS=3 bash run-benchmark.sh
 ```
 
 ---

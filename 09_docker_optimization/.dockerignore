@@ -1,4 +1,6 @@
 target/
+# Dockerfile.naive copies the pre-built jar; the optimized Dockerfile builds its own.
+!target/*.jar
 .git/
 .github/
 *.md
