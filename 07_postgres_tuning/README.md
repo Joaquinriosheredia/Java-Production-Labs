@@ -31,7 +31,7 @@ CREATE INDEX idx_events_pending ON events(occurred_at ASC)
     WHERE status = 'PENDING';
 ```
 
-Measured on 100K rows (5% PENDING): 4.23 ms with a sequential scan vs 1.76 ms through the partial index, **2.4×** (medians of 10 runs) — [`benchmark/results/summary.md`](benchmark/results/summary.md).
+Measured on 100K rows (5% PENDING): 7.45 ms with a sequential scan vs 1.52 ms with an Index Scan on the partial index, **4.9×** (medians of 10 runs) — [`benchmark/results/summary.md`](benchmark/results/summary.md).
 
 ---
 

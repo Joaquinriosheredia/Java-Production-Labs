@@ -64,14 +64,14 @@ See `make help` for all available commands.
 | 06 | [Redis vs Kafka](06_redis_vs_kafka/) | Messaging trade-off benchmark | 8085 | ✅ | [results](06_redis_vs_kafka/benchmark/results/summary.md) |
 | 07 | [PostgreSQL Tuning](07_postgres_tuning/) | Partial indexes, EXPLAIN ANALYZE | 8086 | ✅ | [results](07_postgres_tuning/benchmark/results/summary.md) |
 | 08 | [Kafka Streams](08_kafka_streams/) | Real-time windowed aggregation | 8087 | ✅ | [results](08_kafka_streams/benchmark/results/summary.md) |
-| 09 | [Docker Optimization](09_docker_optimization/) | Layered JARs, multi-stage build | 8088 | ✅ | not reproduced |
+| 09 | [Docker Optimization](09_docker_optimization/) | Layered JARs, multi-stage build | 8088 | ✅ | [results](09_docker_optimization/benchmark/results/summary.md) |
 | 10 | [Kubernetes Autoscaling](10_kubernetes_autoscaling/) | HPA on custom Prometheus metrics | 8089 | ✅ | [results](10_kubernetes_autoscaling/benchmark/results/summary.md) |
 
 ---
 
 ## Quality Matrix
 
-Benchmark: ✅ only where a results file is versioned in `<lab>/benchmark/` (Lab 09: not reproduced, see below).
+Benchmark: ✅ only where a results file is versioned in `<lab>/benchmark/`.
 Testcontainers: ✅ only where a test actually starts a container (labs 03–07). Labs 01, 02, 08, 09 and 10 declare the dependency but no test uses it.
 
 | Lab | ADR | Tests | Testcontainers | Benchmark | Metrics | Chaos |
@@ -84,7 +84,7 @@ Testcontainers: ✅ only where a test actually starts a container (labs 03–07)
 | 06 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 07 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 08 | ✅ | ✅ | — | ✅ | ✅ | ✅ |
-| 09 | ✅ | ✅ | — | — | ✅ | ✅ |
+| 09 | ✅ | ✅ | — | ✅ | ✅ | ✅ |
 | 10 | ✅ | ✅ | — | ✅ | ✅ | ✅ |
 
 ---
@@ -106,17 +106,21 @@ Testcontainers: ✅ only where a test actually starts a container (labs 03–07)
 ## Real Benchmark Results
 
 Every figure below comes from a versioned results file, linked in each section.
-Labs 01 and 07 were re-run on 2026-10-03 with the repo's own `run-benchmark.sh`; their results record environment, date and commit.
+Labs 01, 07 and 09 were re-run on 2026-10-03 with the repo's own `run-benchmark.sh`; their results record environment, date and commit.
 
 ### Lab 01 — Virtual Threads
 
-Median (min – max) over 5 runs per mode, 50 VUs, 200 tasks × 100 ms per request — [results](01_virtual_threads/benchmark/results/summary.md).
+Median (min – max) over 5 runs per mode and load, 200 tasks × 100 ms per request — [results](01_virtual_threads/benchmark/results/summary.md).
+The two loads are separate experiments: compare modes within a load, not across loads.
 
-| Metric | Platform Threads (pool = 20) | Virtual Threads |
-|--------|:----------------:|:---------------:|
-| Throughput | 36.6 req/s (36.4 – 37.1) | **204.2 req/s** (201.4 – 205.0) — 5.6× |
-| p50 latency | 1,008 ms | **101 ms** |
-| p99 latency | 1,047 ms (1,017 – 1,251) | **108 ms** (105 – 111) |
+| VUs | Metric | Platform Threads (pool = 20) | Virtual Threads |
+|----:|--------|:----------------:|:---------------:|
+| 50 | Throughput | 36.7 req/s (36.6 – 37.5) | **207.1 req/s** (201.7 – 208.0) |
+| 50 | p50 latency | 1,008 ms (1,008 – 1,008) | **102 ms** (101 – 102) |
+| 50 | p99 latency | 1,020 ms (1,019 – 1,026) | **105 ms** (104 – 112) |
+| 200 | Throughput | 117.5 req/s (116.5 – 119.1) | **827.5 req/s** (808.2 – 830.4) |
+| 200 | p50 latency | 1,264 ms (1,254 – 1,271) | **101 ms** (101 – 101) |
+| 200 | p99 latency | 1,731 ms (1,706 – 1,735) | **107 ms** (106 – 109) |
 
 Virtual threads eliminate the pool-size bottleneck under I/O-bound concurrency.
 No reactive programming required.
@@ -192,13 +196,13 @@ Kafka keeps what was committed before the crash, Redis keeps nothing.
 
 Median (min – max) over 10 runs — [results](07_postgres_tuning/benchmark/results/summary.md).
 
-| Metric | Sequential scan | Partial index |
+| Metric | Sequential scan | Partial index (Index Scan) |
 |--------|:------:|:-----:|
-| Query latency | 4.23 ms (1.08 – 34.59) | **1.76 ms** (0.82 – 6.67) |
-| Ratio of medians | — | **2.4×** |
+| Query latency | 7.45 ms (6.32 – 29.56) | **1.52 ms** (1.11 – 4.71) |
+| Ratio of medians | — | **4.9×** |
 
-100K-row table, 5% PENDING rows, partial index on `occurred_at` WHERE `status = 'PENDING'`.
-The index path ran as a bitmap scan plus sort (no `ANALYZE` after seeding); see the results file.
+100K-row table (5,084 PENDING), `ANALYZE` after seeding, partial index on `occurred_at` WHERE `status = 'PENDING'`.
+Plans (`EXPLAIN (ANALYZE, BUFFERS)`) and table scan counters are versioned with the results.
 
 ### Lab 08 — Kafka Streams
 
@@ -218,14 +222,19 @@ During Kafka outage: `kafkaTemplate.send().get()` blocks HTTP threads synchronou
 
 ### Lab 09 — Docker Optimization
 
-**Not reproduced.** Neither committed Dockerfile builds from a clean checkout: `Dockerfile.naive` copies
-`target/*.jar`, which the lab's `.dockerignore` excludes, and `Dockerfile` fails in `dependency:go-offline`
-on `com.labs:labs-common:0.0.1-SNAPSHOT`, which is in no repository. No size, startup or rebuild figure is published until it does.
+Both images built from this repo — [results](09_docker_optimization/benchmark/results/summary.md). Times: median (min – max).
 
-| Property | Naive Image | Optimized Image |
+| Metric | Naive Image | Optimized Image |
 |--------|:-----------:|:---------------:|
 | Runtime base | `eclipse-temurin:21-jdk` | `eclipse-temurin:21-jre-alpine` |
-| Runs as | root | non-root (`appuser`) |
+| Image size, compressed (pull/push) | 247 MB | **94 MB** (−62%) |
+| Image size, unpacked on disk | 776 MB | **329 MB** |
+| Runs as | root | **non-root** (`appuser`, uid 100) |
+| Startup (JVM uptime at ready, 5 runs) | 2.13 s (2.10 – 2.14) | 2.15 s (2.07 – 2.22) |
+| Code-only rebuild (3 runs, warm cache) | 9.10 s (8.98 – 9.32) ¹ | 11.78 s (10.82 – 12.45) ² |
+
+¹ `./mvnw package` on the host + `docker build`. ² `docker build` only (the jar is compiled in the build stage).
+The optimized image is smaller and non-root; it does not start faster, and its code-only rebuild is not faster on this machine.
 
 ### Lab 10 — Kubernetes HPA
 
@@ -242,8 +251,8 @@ Source: [results](10_kubernetes_autoscaling/benchmark/results/summary.md).
 ## What Each Lab Demonstrates
 
 ### 01 · Virtual Threads
-Java 21 Project Loom. Under I/O-bound load, 5.6× the throughput of a 20-thread platform pool
-(204 vs 37 req/s, medians of 5 runs); p99 drops from 1,047 ms to 108 ms.
+Java 21 Project Loom against a 20-thread platform pool, I/O-bound load (medians of 5 runs):
+207 vs 37 req/s at 50 VUs, 828 vs 118 req/s at 200 VUs; virtual-thread p99 stays near 105 ms at both loads.
 No reactive programming needed.
 
 ### 02 · Resilience
@@ -274,8 +283,8 @@ During a broker crash both lose what is sent (200/200); Kafka replays what was c
 The throughput gap is an API asymmetry, not a speed claim — see benchmark results for full analysis.
 
 ### 07 · PostgreSQL Tuning
-100K rows, 5% PENDING. Sequential scan: 4.23 ms. Partial index: 1.76 ms. 2.4× (medians of 10 runs).
-`EXPLAIN (ANALYZE, BUFFERS)` via `/api/v1/postgres/explain`.
+100K rows, 5% PENDING. Sequential scan: 7.45 ms. Partial index (Index Scan): 1.52 ms. 4.9× (medians of 10 runs).
+`EXPLAIN (ANALYZE, BUFFERS)` of both plans versioned in `benchmark/results/raw/`.
 
 ### 08 · Kafka Streams
 Tumbling 60-second window counting orders per user. 46.8 rps baseline, p99=4ms, lag=0.
@@ -285,7 +294,7 @@ Recovery to RUNNING in < 200ms via changelog topic replay — no duplicates, lag
 ### 09 · Docker Optimization
 Naive image: full JDK, single fat-JAR layer, runs as root.
 Optimized image: multi-stage build, layered JAR, JRE on Alpine, non-root (`appuser`), `-XX:MaxRAMPercentage=75.0`.
-Benchmark not reproduced (see above).
+247 → 94 MB compressed (−62%); same startup; see the results for rebuild times.
 
 ### 10 · Kubernetes Autoscaling
 HPA v2 on custom Prometheus metric `lab_active_requests_gauge`.
@@ -346,7 +355,7 @@ This repository is designed to be evaluated, not just read:
 
 This repository was developed with AI assistance (Claude) for scaffolding, code generation, and test setup. All labs have been reviewed, compiled and tested locally by the author.
 
-Every benchmark figure in this README links to a versioned results file in `<lab>/benchmark/`. Lab 09 has none and publishes no figures. Every architectural decision is documented in the ADRs.
+Every benchmark figure in this README links to a versioned results file in `<lab>/benchmark/`. Every architectural decision is documented in the ADRs.
 
 ---
 

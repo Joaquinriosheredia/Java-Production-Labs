@@ -26,8 +26,9 @@ curl "http://localhost:8086/api/v1/postgres/explain?query=pending_no_index"
 
 ## Results (100K rows, 5% PENDING)
 
-`bash benchmark/run-benchmark.sh` on a fresh database writes [`results/summary.md`](results/summary.md) (median and range of 10 runs) and the raw responses to `results/raw/`.
-Last run (2026-10-03): seq scan 4.23 ms, partial index 1.76 ms, **2.4×**.
+`bash benchmark/run-benchmark.sh` on a fresh database seeds the rows, runs `ANALYZE`, saves `EXPLAIN (ANALYZE, BUFFERS)` of both modes, and fails unless the index mode is an Index Scan on `idx_events_pending` and the table scan counters show one seq scan and one index scan per run. It writes [`results/summary.md`](results/summary.md) (median and range of 10 runs) and the raw data to `results/raw/`.
+The script runs `psql` in the `lab07-postgres` container (`PG_CONTAINER` to override).
+Last run (2026-10-03): seq scan 7.45 ms, partial index 1.52 ms, **4.9×**.
 
 ---
 

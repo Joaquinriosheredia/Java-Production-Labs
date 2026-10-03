@@ -27,7 +27,7 @@ Code change → only Layer 5 rebuilds.
 
 ## Comparison
 
-> **Not reproduced.** Neither committed Dockerfile builds from a clean checkout (`Dockerfile.naive`: `.dockerignore` excludes `target/`; `Dockerfile`: `dependency:go-offline` needs `com.labs:labs-common:0.0.1-SNAPSHOT`, which is in no repository). No size, startup or rebuild figure is published until it does.
+Measured on 2026-10-03 with `benchmark/run-benchmark.sh` ([`benchmark/results/summary.md`](benchmark/results/summary.md)): 247 → 94 MB compressed (−62%), 776 → 329 MB unpacked; root → `appuser`; startup 2.13 vs 2.15 s (no difference); code-only rebuild 9.10 s (host build + naive image) vs 11.78 s (optimized image).
 
 | Property | Naive | Optimized |
 |--------|-------|-----------|
