@@ -1,0 +1,62 @@
+[
+    {
+        "Architecture": "amd64",
+        "Config": {
+            "Entrypoint": [
+                "java",
+                "-jar",
+                "app.jar"
+            ],
+            "Env": [
+                "PATH=/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "JAVA_HOME=/opt/java/openjdk",
+                "LANG=en_US.UTF-8",
+                "LANGUAGE=en_US:en",
+                "LC_ALL=en_US.UTF-8",
+                "JAVA_VERSION=jdk-21.0.12.1+1"
+            ],
+            "ExposedPorts": {
+                "8088/tcp": {}
+            },
+            "Labels": {
+                "org.opencontainers.image.created": "2026-09-27T10:25:52.887617+00:00",
+                "org.opencontainers.image.description": "The Ubuntu container image maintained by Canonical\n\nUbuntu is a Debian-based Linux operating system that runs from the desktop to the cloud, to all your internet connected things.\nIt is the world's most popular operating system across public clouds and OpenStack clouds.\nIt is the number one platform for containers; from Docker to Kubernetes to LXD, Ubuntu can run your containers at scale.\nFast, secure and simple, Ubuntu powers millions of PCs worldwide.\n",
+                "org.opencontainers.image.title": "ubuntu",
+                "org.opencontainers.image.version": "26.04"
+            },
+            "WorkingDir": "/app"
+        },
+        "Created": "2026-10-03T17:31:39.434439797+02:00",
+        "Descriptor": {
+            "digest": "sha256:ea9164955574fc0fd362a2921f7086f1cb1d715a06fc42c92f3b37086e50be19",
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "size": 2052
+        },
+        "Id": "sha256:ea9164955574fc0fd362a2921f7086f1cb1d715a06fc42c92f3b37086e50be19",
+        "Metadata": {
+            "LastTagTime": "2026-10-03T15:31:39.724178408Z"
+        },
+        "Os": "linux",
+        "Parent": "sha256:4c002d01937481f1d7d324e0cf0f4ec6c1e9bd0428ea33a133a67f12da0934c0",
+        "RepoDigests": [
+            "lab09-naive@sha256:ea9164955574fc0fd362a2921f7086f1cb1d715a06fc42c92f3b37086e50be19"
+        ],
+        "RepoTags": [
+            "lab09-naive:latest"
+        ],
+        "RootFS": {
+            "Layers": [
+                "sha256:f6e0e88dd8e11c81dba77d657b271e1ed7c33882e8f4dfaa7768cbaee94d94fc",
+                "sha256:f98d83061adc18abc1ffea46400be62b16d3da85c4e28563a97b3ff4cf7cca14",
+                "sha256:ac0af953cec61c7b79080531b7807253a9f36a959e339251d107e38b3f0c06ab",
+                "sha256:4255665768ea32e8c6397fa6fd1ef39e17b039d713d68b975d3f7ace34f74a97",
+                "sha256:e79c15be4266541574b52afa087bb34ae894242a7e359d1f6e877854591532f5",
+                "sha256:97e9f5d45299a366dd7d89cff42bbb7e855d967dc3a9a7293192e2dd0da311d5",
+                "sha256:9807d9dbecd5f9494a55049262827166f665d878d9d2b724ac60d8ac792cd155",
+                "sha256:6f0072cae02b651f7697461ea86caf64a83f51380df836df70eb351c0ea57052"
+            ],
+            "Type": "layers"
+        },
+        "Size": 247095669
+    }
+]

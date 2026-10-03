@@ -1,0 +1,62 @@
+[
+    {
+        "Architecture": "amd64",
+        "Config": {
+            "Entrypoint": [
+                "java",
+                "-XX:+UseContainerSupport",
+                "-XX:MaxRAMPercentage=75.0",
+                "-XX:+UseZGC",
+                "-Djava.security.egd=file:/dev/./urandom",
+                "org.springframework.boot.loader.launch.JarLauncher"
+            ],
+            "Env": [
+                "PATH=/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "JAVA_HOME=/opt/java/openjdk",
+                "LANG=en_US.UTF-8",
+                "LANGUAGE=en_US:en",
+                "LC_ALL=en_US.UTF-8",
+                "JAVA_VERSION=jdk-21.0.12.1+1"
+            ],
+            "ExposedPorts": {
+                "8088/tcp": {}
+            },
+            "User": "appuser",
+            "WorkingDir": "/app"
+        },
+        "Created": "2026-10-03T17:31:47.869738336+02:00",
+        "Descriptor": {
+            "digest": "sha256:580e7900117a52b1fe2f24a1eadad9893744541546e4b913ac644039ffbdbec8",
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "size": 2494
+        },
+        "Id": "sha256:580e7900117a52b1fe2f24a1eadad9893744541546e4b913ac644039ffbdbec8",
+        "Metadata": {
+            "LastTagTime": "2026-10-03T15:31:48.190062718Z"
+        },
+        "Os": "linux",
+        "Parent": "sha256:4c775fd65516eac2c53e22646be1dbc56dcb53e436cc4a47453ceef5b057a11f",
+        "RepoDigests": [
+            "lab09-optimized@sha256:580e7900117a52b1fe2f24a1eadad9893744541546e4b913ac644039ffbdbec8"
+        ],
+        "RepoTags": [
+            "lab09-optimized:latest"
+        ],
+        "RootFS": {
+            "Layers": [
+                "sha256:74d97c428c51a828f9051a7a40a53ff1fc99e54fc30323ce36760701b0b7f711",
+                "sha256:baf1a350e0e1d00ceba2137c71230f7da7169c5c0abcae7c9f6c2d722cb6d94e",
+                "sha256:d87dbc49b44ca2d4171fe12f7dfcb9dbc62b4a43a9a0e34a26a7ae39498e7cf7",
+                "sha256:9248f3d0047d55db8f014b4fe149d51b85515efcbf6342449dd9c34a66cee9fc",
+                "sha256:d2abfe9c833160e132446b4a633f9f61a3ecbecbca128daa66bb0253e6f2f70f",
+                "sha256:86a94edb8fd6150134cb1416b5dba4aabef5aa4e4ffde16fea51692bede9cad8",
+                "sha256:bf49976b284326993f6aee933285e91aa257960a23d8df84525ce196fff24d86",
+                "sha256:f310415e2e6ee505b86872bf2270a7ef309724284b28af768ef9b202a841b052",
+                "sha256:602e53c5cc3c49ab3fc92ad8c06bf93381a9b382f8d084bdf632da4bf8f4e37b",
+                "sha256:3be9ab3ba446105ee8e754fb55dcd1158daa74d8a7deebcfa4f316431f3b94bb"
+            ],
+            "Type": "layers"
+        },
+        "Size": 94144533
+    }
+]

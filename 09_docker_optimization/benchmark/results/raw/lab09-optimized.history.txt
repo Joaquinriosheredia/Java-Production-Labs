@@ -1,0 +1,20 @@
+0B	/bin/sh -c #(nop)  ENTRYPOINT ["java" "-XX:+UseContainerSupport" "-XX:MaxRAMPercentage=75.0" "-XX:+UseZGC" "-Djava.security.egd=file:/dev/./urandom" "org.springframework.boot.loader.launch.JarLauncher"]
+0B	/bin/sh -c #(nop)  EXPOSE 8088
+0B	/bin/sh -c #(nop)  USER appuser
+90.1kB	/bin/sh -c #(nop) COPY dir:26e850e3044b3ad085e5a0a9d82804bc1b57c52c27708260d97630948796d821 in ./ 
+0B	/bin/sh -c #(nop) COPY dir:a98d9b14a5b7e698df3fbf176992c33577385197a0c53d4d4c11f362edaf7722 in ./ 
+668kB	/bin/sh -c #(nop) COPY dir:f4d236140ba16e2214bffd9811b035596b9f34e059cf9c241f239b77791b6a2b in ./ 
+22.3MB	/bin/sh -c #(nop) COPY dir:3b7c4b0b2dbcb5ddecde64b2cb7c4edd799193f3109cdfd0e238e26d19458cc0 in ./ 
+8.19kB	/bin/sh -c #(nop) WORKDIR /app
+41kB	/bin/sh -c addgroup -S appgroup && adduser -S appuser -G appgroup
+0B	ENTRYPOINT ["/__cacert_entrypoint.sh"]
+12.3kB	COPY --chmod=755 entrypoint.sh /__cacert_entrypoint.sh # buildkit
+12.3kB	RUN /bin/sh -c set -eux;     echo "Verifying install ...";     echo "java --version"; java --version;     echo "Complete." # buildkit
+165MB	RUN /bin/sh -c set -eux;     ARCH="$(apk --print-arch)";     case "${ARCH}" in        aarch64)          ESUM='98e15ae359e1f87160ee4c0abb43336513e41712d439fd4a805a5474af32b2c7';          BINARY_URL='https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_aarch64_alpine-linux_hotspot_21.0.12.1_1.tar.gz';          ;;        x86_64)          ESUM='7bc7c2f9ba5ffea5f727e14581964bd54294b8edc2be9a79ea6393f8d0799200';          BINARY_URL='https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_x64_alpine-linux_hotspot_21.0.12.1_1.tar.gz';          ;;        *)          echo "Unsupported arch: ${ARCH}";          exit 1;          ;;     esac;     wget -O /tmp/openjdk.tar.gz ${BINARY_URL};     wget -O /tmp/openjdk.tar.gz.sig ${BINARY_URL}.sig;     export GNUPGHOME="$(mktemp -d)";     gpg --batch --keyserver keyserver.ubuntu.com --recv-keys 3B04D753C9050D9A5D343F39843C48A565F8F04B;     gpg --batch --verify /tmp/openjdk.tar.gz.sig /tmp/openjdk.tar.gz;     rm -rf "${GNUPGHOME}" /tmp/openjdk.tar.gz.sig;     echo "${ESUM} */tmp/openjdk.tar.gz" | sha256sum -c -;     mkdir -p "$JAVA_HOME";     tar --extract         --file /tmp/openjdk.tar.gz         --directory "$JAVA_HOME"         --strip-components 1         --no-same-owner     ;     rm -f /tmp/openjdk.tar.gz; # buildkit
+0B	ENV JAVA_VERSION=jdk-21.0.12.1+1
+37.9MB	RUN /bin/sh -c set -eux;     apk add --no-cache         fontconfig ttf-dejavu         gnupg         ca-certificates p11-kit-trust         musl-locales musl-locales-lang         tzdata         coreutils         openssl     ;     rm -rf /var/cache/apk/* # buildkit
+0B	ENV LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8
+0B	ENV PATH=/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+0B	ENV JAVA_HOME=/opt/java/openjdk
+0B	CMD ["/bin/sh"]
+9.08MB	ADD alpine-minirootfs-3.24.2-x86_64.tar.gz / # buildkit

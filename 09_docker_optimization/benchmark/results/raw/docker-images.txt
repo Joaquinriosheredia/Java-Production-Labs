@@ -1,0 +1,6 @@
+lab09-naive-rebuild:latest	b889d2cfc8ee	776MB
+lab09-optimized:latest	580e7900117a	329MB
+lab09-optimized-rebuild:latest	580e7900117a	329MB
+lab09-naive:latest	ea9164955574	776MB
+lab09-optimized:bench	410c2e025fd6	304MB
+lab09-naive:bench	12e17406c78f	763MB
