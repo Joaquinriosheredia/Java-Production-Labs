@@ -44,8 +44,12 @@ for run in $(seq 1 "$RUNS"); do
   cat "$RAW/compare_run${run}.json"; echo
 done
 
-sleep 1  # pg_stat counters are flushed asynchronously
-read -r seq1 idx1 <<<"$(scans)"
+# A backend flushes its pg_stat counters when it has been idle for up to 10 s: wait for them.
+for _ in $(seq 1 30); do
+  read -r seq1 idx1 <<<"$(scans)"
+  [ $((seq1 - seq0)) -ge "$RUNS" ] && [ $((idx1 - idx0)) -ge "$RUNS" ] && break
+  sleep 1
+done
 echo "seq_scan_delta=$((seq1 - seq0)) idx_scan_delta=$((idx1 - idx0)) runs=$RUNS" > "$RAW/scan_counters.txt"
 cat "$RAW/scan_counters.txt"
 if [ $((seq1 - seq0)) -ne "$RUNS" ] || [ $((idx1 - idx0)) -ne "$RUNS" ]; then
