@@ -6,7 +6,7 @@ out="$1"
 {
   echo "date_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "commit=$(git rev-parse HEAD 2>/dev/null || echo unknown)"
-  echo "worktree_dirty=$( [ -n "$(git status --porcelain --untracked-files=no -- . 2>/dev/null)" ] && echo yes || echo no)"
+  echo "worktree_dirty=$( [ -n "$(git status --porcelain --untracked-files=no -- ':(top)' ':(top,exclude,glob)**/benchmark/results/**' 2>/dev/null)" ] && echo yes || echo no)"
   echo "os=$(uname -sr)"
   echo "cpu=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | sed 's/^ //' || echo unknown)"
   echo "cpus=$(nproc 2>/dev/null || echo unknown)"
