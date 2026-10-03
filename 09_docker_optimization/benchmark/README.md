@@ -14,12 +14,8 @@ bash benchmark/run-benchmark.sh
 
 ---
 
-## Expected Results
+## Results
 
-| Metric | Naive | Optimized | Improvement |
-|--------|-------|-----------|------------|
-| Image size | ~520MB | ~195MB | 62% smaller |
-| First build time | ~3m | ~4m (+multi-stage) | Similar |
-| Rebuild (code change only) | ~3m (full rebuild) | ~15s (app layer only) | 12× faster |
-| Run as root | Yes | No | Security ✓ |
-| Container memory respect | No | Yes (-XX:+UseContainerSupport) | OOM prevention |
+> **Not reproduced.** Neither committed Dockerfile builds from a clean checkout (`Dockerfile.naive`: `.dockerignore` excludes `target/`; `Dockerfile`: `dependency:go-offline` needs `com.labs:labs-common:0.0.1-SNAPSHOT`, which is in no repository). No size, startup or rebuild figure is published until it does.
+
+Also: `run-benchmark.sh` simulates a code change with `touch`, but Docker caches `COPY` by content, not mtime, so that rebuild is a full cache hit and does not measure a code-only rebuild.

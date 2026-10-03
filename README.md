@@ -54,23 +54,24 @@ See `make help` for all available commands.
 
 ## Labs
 
-| # | Lab | Core Concept | Port | Status | Benchmark real |
+| # | Lab | Core Concept | Port | Status | Benchmark results |
 |---|-----|-------------|------|--------|:--------------:|
-| 01 | [Virtual Threads](01_virtual_threads/) | Concurrency with Project Loom | 8080 | ✅ | ✅ |
-| 02 | [Resilience](02_resilience/) | Circuit Breaker, Retry, Bulkhead | 8081 | ✅ | ✅ |
-| 03 | [Rate Limiter](03_rate_limiter/) | Distributed token bucket (Redis) | 8082 | ✅ | ✅ |
-| 04 | [Transactional Outbox](04_outbox_kafka/) | At-least-once event delivery | 8083 | ✅ | ✅ |
-| 05 | [Saga Pattern](05_saga_pattern/) | Distributed transactions + compensation | 8084 | ✅ | ✅ |
-| 06 | [Redis vs Kafka](06_redis_vs_kafka/) | Messaging trade-off benchmark | 8085 | ✅ | ✅ |
-| 07 | [PostgreSQL Tuning](07_postgres_tuning/) | Partial indexes, EXPLAIN ANALYZE | 8086 | ✅ | ✅ |
-| 08 | [Kafka Streams](08_kafka_streams/) | Real-time windowed aggregation | 8087 | ✅ | ✅ |
-| 09 | [Docker Optimization](09_docker_optimization/) | Layered JARs, multi-stage build | 8088 | ✅ | ✅ |
-| 10 | [Kubernetes Autoscaling](10_kubernetes_autoscaling/) | HPA on custom Prometheus metrics | 8089 | ✅ | ✅ |
+| 01 | [Virtual Threads](01_virtual_threads/) | Concurrency with Project Loom | 8080 | ✅ | [results](01_virtual_threads/benchmark/results/summary.md) |
+| 02 | [Resilience](02_resilience/) | Circuit Breaker, Retry, Bulkhead | 8081 | ✅ | [results](02_resilience/benchmark/summary.md) |
+| 03 | [Rate Limiter](03_rate_limiter/) | Distributed token bucket (Redis) | 8082 | ✅ | [results](03_rate_limiter/benchmark/results/summary.md) |
+| 04 | [Transactional Outbox](04_outbox_kafka/) | At-least-once event delivery | 8083 | ✅ | [results](04_outbox_kafka/benchmark/results/summary.md) |
+| 05 | [Saga Pattern](05_saga_pattern/) | Distributed transactions + compensation | 8084 | ✅ | [results](05_saga_pattern/benchmark/results/summary.md) |
+| 06 | [Redis vs Kafka](06_redis_vs_kafka/) | Messaging trade-off benchmark | 8085 | ✅ | [results](06_redis_vs_kafka/benchmark/results/summary.md) |
+| 07 | [PostgreSQL Tuning](07_postgres_tuning/) | Partial indexes, EXPLAIN ANALYZE | 8086 | ✅ | [results](07_postgres_tuning/benchmark/results/summary.md) |
+| 08 | [Kafka Streams](08_kafka_streams/) | Real-time windowed aggregation | 8087 | ✅ | [results](08_kafka_streams/benchmark/results/summary.md) |
+| 09 | [Docker Optimization](09_docker_optimization/) | Layered JARs, multi-stage build | 8088 | ✅ | not reproduced |
+| 10 | [Kubernetes Autoscaling](10_kubernetes_autoscaling/) | HPA on custom Prometheus metrics | 8089 | ✅ | [results](10_kubernetes_autoscaling/benchmark/results/summary.md) |
 
 ---
 
 ## Quality Matrix
 
+Benchmark: ✅ only where a results file is versioned in `<lab>/benchmark/` (Lab 09: not reproduced, see below).
 Testcontainers: ✅ only where a test actually starts a container (labs 03–07). Labs 01, 02, 08, 09 and 10 declare the dependency but no test uses it.
 
 | Lab | ADR | Tests | Testcontainers | Benchmark | Metrics | Chaos |
@@ -83,7 +84,7 @@ Testcontainers: ✅ only where a test actually starts a container (labs 03–07)
 | 06 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 07 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 08 | ✅ | ✅ | — | ✅ | ✅ | ✅ |
-| 09 | ✅ | ✅ | — | ✅ | ✅ | ✅ |
+| 09 | ✅ | ✅ | — | — | ✅ | ✅ |
 | 10 | ✅ | ✅ | — | ✅ | ✅ | ✅ |
 
 ---
@@ -104,20 +105,25 @@ Testcontainers: ✅ only where a test actually starts a container (labs 03–07)
 
 ## Real Benchmark Results
 
-Executed on local hardware: WSL2 Ubuntu, 16 CPUs, 15.57 GB RAM, Docker in-process.
-Full methodology and raw data in each lab's `benchmark/results/summary.md`.
+Every figure below comes from a versioned results file, linked in each section.
+Labs 01 and 07 were re-run on 2026-10-03 with the repo's own `run-benchmark.sh`; their results record environment, date and commit.
 
 ### Lab 01 — Virtual Threads
 
-| Metric | Platform Threads | Virtual Threads |
+Median (min – max) over 5 runs per mode, 50 VUs, 200 tasks × 100 ms per request — [results](01_virtual_threads/benchmark/results/summary.md).
+
+| Metric | Platform Threads (pool = 20) | Virtual Threads |
 |--------|:----------------:|:---------------:|
-| Throughput | baseline | **7.4× higher** |
-| p99 latency | 5,817 ms | **167 ms** |
+| Throughput | 36.6 req/s (36.4 – 37.1) | **204.2 req/s** (201.4 – 205.0) — 5.6× |
+| p50 latency | 1,008 ms | **101 ms** |
+| p99 latency | 1,047 ms (1,017 – 1,251) | **108 ms** (105 – 111) |
 
 Virtual threads eliminate the pool-size bottleneck under I/O-bound concurrency.
 No reactive programming required.
 
 ### Lab 02 — Resilience4j
+
+Source: [results](02_resilience/benchmark/summary.md).
 
 | Metric | Value |
 |--------|-------|
@@ -129,6 +135,8 @@ Bulkhead + CircuitBreaker + Retry chain measured end-to-end under injected failu
 
 ### Lab 03 — Redis Rate Limiter
 
+Source: [results](03_rate_limiter/benchmark/results/summary.md).
+
 | Metric | Value |
 |--------|-------|
 | Sustained throughput | 460 req/s |
@@ -138,6 +146,8 @@ Bulkhead + CircuitBreaker + Retry chain measured end-to-end under injected failu
 Distributed token bucket — correct under multiple app instances sharing the same Redis.
 
 ### Lab 04 — Transactional Outbox
+
+Source: [results](04_outbox_kafka/benchmark/results/summary.md).
 
 | Metric | Value |
 |--------|-------|
@@ -152,6 +162,8 @@ Verification available: [java-vibe-guard --verify VIBE-001](https://github.com/J
 
 ### Lab 05 — Saga Pattern
 
+Source: [results](05_saga_pattern/benchmark/results/summary.md).
+
 | Metric | Value |
 |--------|-------|
 | Orders stuck in `STARTED` | 71.8% |
@@ -162,6 +174,8 @@ Choreography-based saga over Kafka. The benchmark intentionally demonstrates the
 services appearing healthy while distributed state is inconsistent.
 
 ### Lab 06 — Redis Pub/Sub vs Kafka
+
+Source: [results](06_redis_vs_kafka/benchmark/results/summary.md).
 
 | Metric | Redis Pub/Sub | Kafka |
 |--------|:-------------:|:-----:|
@@ -176,16 +190,19 @@ Kafka keeps what was committed before the crash, Redis keeps nothing.
 
 ### Lab 07 — PostgreSQL Optimization
 
-| Metric | Before | After |
-|--------|:------:|:-----:|
-| Query latency | 285 ms | 12 ms |
-| Speedup | — | **26×** |
-| Technique | sequential scan | partial index |
+Median (min – max) over 10 runs — [results](07_postgres_tuning/benchmark/results/summary.md).
 
-100K-row table, 5% PENDING rows. Partial index on `(status)` WHERE `status = 'PENDING'`
-eliminates the full table scan. `EXPLAIN (ANALYZE, BUFFERS)` output in ADR-0001.
+| Metric | Sequential scan | Partial index |
+|--------|:------:|:-----:|
+| Query latency | 4.23 ms (1.08 – 34.59) | **1.76 ms** (0.82 – 6.67) |
+| Ratio of medians | — | **2.4×** |
+
+100K-row table, 5% PENDING rows, partial index on `occurred_at` WHERE `status = 'PENDING'`.
+The index path ran as a bitmap scan plus sort (no `ANALYZE` after seeding); see the results file.
 
 ### Lab 08 — Kafka Streams
+
+Source: [results](08_kafka_streams/benchmark/results/summary.md).
 
 | Metric | Baseline | Post-Recovery |
 |--------|:--------:|:-------------:|
@@ -201,16 +218,18 @@ During Kafka outage: `kafkaTemplate.send().get()` blocks HTTP threads synchronou
 
 ### Lab 09 — Docker Optimization
 
-| Metric | Naive Image | Optimized Image |
-|--------|:-----------:|:---------------:|
-| Tamaño imagen | 233 MB | **79 MB** (−66.1%) |
-| Startup | 2917 ms | **2445 ms** (−472 ms) |
-| Rebuild en CI con BuildKit | 10 s | **3-5 s** (4-8× speedup) |
-| Seguridad | root | **nonroot (65532)** |
+**Not reproduced.** Neither committed Dockerfile builds from a clean checkout: `Dockerfile.naive` copies
+`target/*.jar`, which the lab's `.dockerignore` excludes, and `Dockerfile` fails in `dependency:go-offline`
+on `com.labs:labs-common:0.0.1-SNAPSHOT`, which is in no repository. No size, startup or rebuild figure is published until it does.
 
-- **Memoria**: ZGC pre-reserva heap correctamente para containers (comportamiento esperado).
+| Property | Naive Image | Optimized Image |
+|--------|:-----------:|:---------------:|
+| Runtime base | `eclipse-temurin:21-jdk` | `eclipse-temurin:21-jre-alpine` |
+| Runs as | root | non-root (`appuser`) |
 
 ### Lab 10 — Kubernetes HPA
+
+Source: [results](10_kubernetes_autoscaling/benchmark/results/summary.md).
 
 - CPU con 50 VUs: 110m (threshold: 350m) — HPA nunca disparó
 - 0% error rate con 1 solo pod durante toda la prueba
@@ -223,8 +242,8 @@ During Kafka outage: `kafkaTemplate.send().get()` blocks HTTP threads synchronou
 ## What Each Lab Demonstrates
 
 ### 01 · Virtual Threads
-Java 21 Project Loom in production. 7.4× throughput improvement measured under I/O-bound load.
-p99 latency drops from 5,817 ms (platform thread pool) to 167 ms (virtual threads).
+Java 21 Project Loom. Under I/O-bound load, 5.6× the throughput of a 20-thread platform pool
+(204 vs 37 req/s, medians of 5 runs); p99 drops from 1,047 ms to 108 ms.
 No reactive programming needed.
 
 ### 02 · Resilience
@@ -255,8 +274,8 @@ During a broker crash both lose what is sent (200/200); Kafka replays what was c
 The throughput gap is an API asymmetry, not a speed claim — see benchmark results for full analysis.
 
 ### 07 · PostgreSQL Tuning
-100K rows, 5% PENDING. Sequential scan: 285ms. Partial index: 12ms. 26× improvement.
-`EXPLAIN (ANALYZE, BUFFERS)` output before and after included in ADR-0001.
+100K rows, 5% PENDING. Sequential scan: 4.23 ms. Partial index: 1.76 ms. 2.4× (medians of 10 runs).
+`EXPLAIN (ANALYZE, BUFFERS)` via `/api/v1/postgres/explain`.
 
 ### 08 · Kafka Streams
 Tumbling 60-second window counting orders per user. 46.8 rps baseline, p99=4ms, lag=0.
@@ -264,8 +283,9 @@ Kafka broker killed mid-load: 60% error rate (24/40), health check false-positiv
 Recovery to RUNNING in < 200ms via changelog topic replay — no duplicates, lag=0 immediately after restart.
 
 ### 09 · Docker Optimization
-Naive image: 520MB, 3-minute rebuilds, runs as root, ignores container memory limits.
-Optimized image: 195MB, 15-second code-only rebuilds, non-root, `-XX:MaxRAMPercentage=75.0`.
+Naive image: full JDK, single fat-JAR layer, runs as root.
+Optimized image: multi-stage build, layered JAR, JRE on Alpine, non-root (`appuser`), `-XX:MaxRAMPercentage=75.0`.
+Benchmark not reproduced (see above).
 
 ### 10 · Kubernetes Autoscaling
 HPA v2 on custom Prometheus metric `lab_active_requests_gauge`.
@@ -324,9 +344,9 @@ This repository is designed to be evaluated, not just read:
 
 ## How this was built
 
-This repository was developed with AI assistance (Claude) for scaffolding, code generation, and test setup. All labs have been reviewed, compiled, tested locally, and benchmarked by the author.
+This repository was developed with AI assistance (Claude) for scaffolding, code generation, and test setup. All labs have been reviewed, compiled and tested locally by the author.
 
-The benchmark results are real — executed on local hardware (WSL2 Ubuntu, 16 CPUs, 15.57GB RAM). Every architectural decision is documented in the ADRs and defensible in a technical interview.
+Every benchmark figure in this README links to a versioned results file in `<lab>/benchmark/`. Lab 09 has none and publishes no figures. Every architectural decision is documented in the ADRs.
 
 ---
 

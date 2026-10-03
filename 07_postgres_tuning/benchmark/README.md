@@ -24,13 +24,10 @@ curl "http://localhost:8086/api/v1/postgres/explain?query=pending_no_index"
 
 ---
 
-## Expected Results (100K rows, 5% PENDING)
+## Results (100K rows, 5% PENDING)
 
-| Mode | Query Time | Plan |
-|------|-----------|------|
-| Sequential Scan | ~285ms | Seq Scan, 95K rows filtered |
-| Partial Index Scan | ~12ms | Index Scan using idx_events_pending |
-| **Speedup** | **~23×** | |
+`bash benchmark/run-benchmark.sh` on a fresh database writes [`results/summary.md`](results/summary.md) (median and range of 10 runs) and the raw responses to `results/raw/`.
+Last run (2026-10-03): seq scan 4.23 ms, partial index 1.76 ms, **2.4×**.
 
 ---
 
