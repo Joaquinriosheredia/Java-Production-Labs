@@ -1,1 +1,1 @@
-{"indexSpeedup":"1.8x faster","seqScan":{"durationMs":7,"mode":"seq_scan","durationNanos":7352033,"rowsReturned":100,"limit":100},"indexScan":{"durationMs":4,"mode":"index_scan","durationNanos":4381924,"rowsReturned":100,"limit":100}}
+{"indexScan":{"rowsReturned":100,"durationNanos":1665394,"mode":"index_scan","durationMs":1,"limit":100},"seqScan":{"rowsReturned":100,"durationNanos":7573268,"mode":"seq_scan","durationMs":7,"limit":100},"indexSpeedup":"7.0x faster"}
