@@ -28,14 +28,16 @@ for img in lab09-naive lab09-optimized; do
   docker history --no-trunc --format '{{.Size}}\t{{.CreatedBy}}' "$img" > "$RAW/$img.history.txt"
 done
 
-# Startup: Spring Boot's own "Started ... in X seconds" line, one fresh container per run.
+# Startup: JVM uptime when Spring Boot reports ready ("process running for X"), one fresh
+# container per run. The "Started ... in X seconds" figure is not used: its clock can start
+# late (one run reported 0.675 s with the same 2.1 s of JVM uptime as the others).
 echo ""
 echo "--- Startup ($STARTS runs per image) ---"
 startup() {
   local img="$1" run="$2" cid secs
   cid=$(docker run -d --memory=512m "$img")
   for _ in $(seq 1 120); do
-    secs=$(docker logs "$cid" 2>&1 | sed -n 's/.*Started .* in \([0-9.]*\) seconds.*/\1/p' | head -1)
+    secs=$(docker logs "$cid" 2>&1 | sed -n 's/.*Started .*(process running for \([0-9.]*\)).*/\1/p' | head -1)
     [ -n "$secs" ] && break
     sleep 0.5
   done
@@ -109,7 +111,7 @@ REDUCTION=$(python3 -c "print(f'{(1-$OPT_MB/$NAIVE_MB)*100:.0f}')")
   echo "| Image size, compressed | ${NAIVE_MB} MB | ${OPT_MB} MB (−${REDUCTION} %) |"
   echo "| Image size, unpacked on disk | $(disk_size lab09-naive) | $(disk_size lab09-optimized) |"
   echo "| Runs as | $(user_of lab09-naive) | $(user_of lab09-optimized) |"
-  echo "| Startup (Spring \"Started … in\", ${STARTS} runs, \`--memory=512m\`) | $(median_range ${START[lab09-naive]}) s | $(median_range ${START[lab09-optimized]}) s |"
+  echo "| Startup (JVM uptime at \"Started\", ${STARTS} runs, \`--memory=512m\`) | $(median_range ${START[lab09-naive]}) s | $(median_range ${START[lab09-optimized]}) s |"
   echo "| Code-only rebuild (${REBUILDS} runs, warm cache) | $(median_range $REB_NAIVE) s ¹ | $(median_range $REB_OPT) s ² |"
   echo
   echo "¹ \`./mvnw package\` on the host + \`docker build\`: the naive image needs the jar built first."
