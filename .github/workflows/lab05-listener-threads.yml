@@ -33,7 +33,10 @@ jobs:
         run: rm -rf 05_saga_pattern/app/src/main/java/com/labs/saga/config
       - name: 10 runs on 2 CPUs
         working-directory: 05_saga_pattern
+        shell: bash
         run: |
+          # No -e: test failures and the killed watcher must not stop the loop.
+          set +e
           extra=""; [ "${{ matrix.variant }}" = before-diag ] && extra="-DargLine=-Djdk.tracePinnedThreads=full"
           echo "variant=${{ matrix.variant }} shard=${{ matrix.shard }} nproc=$(nproc) taskset=0,1" | tee results.txt
           for i in $(seq 1 10); do
@@ -50,7 +53,7 @@ jobs:
               fi ) & watcher=$!
             if taskset -c 0,1 mvn -B -q test $extra > run-$i.log 2>&1; then r=ok; else
               r=$(grep -ohE "ConditionTimeout|listeners not ready" target/surefire-reports/*.txt 2>/dev/null | head -1); r="fail ${r:-other}"; fi
-            kill $watcher 2>/dev/null; wait $watcher 2>/dev/null
+            kill $watcher 2>/dev/null; wait $watcher 2>/dev/null || true
             cp target/surefire-reports/TEST-*.xml surefire-$i.xml 2>/dev/null || true
             start=$(grep -m1 -oE 'Started SagaIntegrationTest in [0-9.]+' run-$i.log surefire-$i.xml 2>/dev/null | head -1 | grep -oE '[0-9.]+$')
             cns=$(cat run-$i.log surefire-$i.xml 2>/dev/null | grep -c 'Consumer thread failed to start' || true)
