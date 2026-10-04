@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [before, after]
+        variant: [before, after, after-vt-off]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,11 +30,13 @@ jobs:
         run: |
           echo "nproc=$(nproc) taskset=0,1" | tee results.txt
           for i in $(seq 1 10); do
-            if taskset -c 0,1 mvn -B -q test > run-$i.log 2>&1; then r=ok; else
+            extra=""; [ "${{ matrix.variant }}" = after-vt-off ] && extra="-DargLine=-Dspring.threads.virtual.enabled=false"
+            if taskset -c 0,1 mvn -B -q test $extra > run-$i.log 2>&1; then r=ok; else
               r=$(grep -ohE "ConditionTimeout|listeners not ready" target/surefire-reports/*.txt 2>/dev/null | head -1); r="fail ${r:-other}"; fi
             echo "${{ matrix.variant }} run $i: $r" | tee -a results.txt
           done
           echo "${{ matrix.variant }}: $(grep -c ': fail' results.txt || true) failures / 10" | tee -a results.txt
+          for i in $(seq 1 10); do echo "run $i: start=$(grep -m1 -oE 'Started SagaIntegrationTest in [0-9.]+' run-$i.log | grep -oE '[0-9.]+$')s consumer-not-started=$(grep -c 'Consumer thread failed to start' run-$i.log || true)"; done | tee -a results.txt
           cat results.txt >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
