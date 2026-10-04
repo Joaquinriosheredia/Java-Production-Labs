@@ -12,11 +12,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [before, after]
+        # Round 2: rates already measured (30/30 before vs after). Now only thread dumps
+        # of failing "before" runs, without -Djdk.tracePinnedThreads (round 1 saw no failure with it).
+        variant: [before-dump]
         shard: [1, 2, 3]
-        include:
-          - variant: before-diag
-            shard: 1
     steps:
       - uses: actions/checkout@v4
         with:
@@ -40,7 +39,7 @@ jobs:
           extra=""; [ "${{ matrix.variant }}" = before-diag ] && extra="-DargLine=-Djdk.tracePinnedThreads=full"
           echo "variant=${{ matrix.variant }} shard=${{ matrix.shard }} nproc=$(nproc) taskset=0,1" | tee results.txt
           for i in $(seq 1 10); do
-            ( if [ "${{ matrix.variant }}" = before-diag ]; then
+            ( if [ "${{ matrix.variant }}" = before-diag ] || [ "${{ matrix.variant }}" = before-dump ]; then
                 # one thread dump per run, at the first "Consumer thread failed to start"
                 for t in $(seq 1 600); do
                   sleep 1
