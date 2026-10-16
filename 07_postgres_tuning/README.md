@@ -3,7 +3,7 @@
 ## Problem
 
 A background poller queries `SELECT * FROM events WHERE status = 'PENDING'` every second.
-With 1M rows and only 5% PENDING, PostgreSQL scans 950K rows to return 50K.
+Illustration (not measured): with 1M rows and only 5% PENDING, a sequential scan reads 950K rows to return 50K. The benchmark uses 100K rows and `LIMIT 100` ([results](benchmark/results/summary.md)).
 Every query does a full table scan. Under load this causes CPU spikes and slow responses.
 
 **How do you optimize a selective query on a large table?**
