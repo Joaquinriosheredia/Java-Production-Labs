@@ -84,8 +84,8 @@ Redis has genuinely **lower end-to-end latency** — `PUBLISH` fans out before r
 
 | Scenario                        | Redis         | Kafka                    |
 |---------------------------------|:-------------:|:------------------------:|
-| Msgs lost during broker crash   | **200 / 200** | 0 committed              |
-| Recovery after restart          | Impossible    | **100%** (500/500)       |
+| Msgs sent during broker crash, lost | **200 / 200** | **200 / 200** (`delivery.timeout.ms` expired) |
+| Msgs committed before the crash, recovered | — (no persistence) | **200 / 200** |
 | Consumer offset after restart   | N/A           | Preserved — full replay  |
 
 Redis Pub/Sub has no persistence. **Every message published while the broker is down

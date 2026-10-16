@@ -3,8 +3,8 @@
 ## Problem
 
 A Java service using virtual threads handles I/O-bound work.
-CPU utilization stays low (~5%) even under heavy load (virtual threads don't consume CPU while waiting).
-CPU-based HPA never triggers. Service degrades under load without scaling.
+CPU use does not grow with load when requests mostly wait (virtual threads don't consume CPU while waiting).
+In the benchmark (50 VUs, 200 ms of sleep per request) steady-state CPU was ~110m per pod, the CPU-only HPA did not scale up, and the single pod served the load with 0 % errors and p99 ≈ 215 ms ([results](benchmark/results/summary.md)).
 
 **How do you autoscale a service that doesn't consume CPU proportionally to load?**
 
